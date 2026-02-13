@@ -11,7 +11,7 @@
     .wrap{position:relative;width:100vw;height:100vh}
     canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
     .btn{
-      position:absolute; right:14px; bottom:175px;
+      position:absolute; right:14px; bottom:200px;
       background:rgba(0,0,0,.35);
       border:2px solid rgba(255,255,255,.18);
       border-radius:14px; padding:10px;
@@ -393,7 +393,7 @@
     rat.target = { x: cheese.x, y: cheese.y };
     rat.busy = true;
 
-    showBubble("Yum! 🧀");
+    showBubble("Nom Nom");
     chime();
   }
 
@@ -481,7 +481,7 @@
 
     // title (more spacing)
     drawArcLine("Happy Valentine’s Day", t, 74, 105, 13);
-    drawArcLine("My bby 💗",            t, 102, 85, 13);
+    drawArcLine("My bby",            t, 102, 85, 13);
 
     // bubble (middle sky)
     if(bubbleTimer>0) bubbleTimer--;
