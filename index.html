@@ -11,11 +11,10 @@
     .wrap{position:relative;width:100vw;height:100vh}
     canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 
-    /* UI overlay (only button) */
     .btn{
       position:absolute;
       right:14px;
-      bottom:76px; /* above bottom text */
+      bottom:76px;
       background:rgba(0,0,0,.35);
       border:2px solid rgba(255,255,255,.18);
       border-radius:14px;
@@ -44,7 +43,6 @@
     <button id="muteBtn">Mute</button>
   </div>
 
-  <!-- ONLY Sofia mp3 -->
   <audio id="bgm" loop preload="auto">
     <source src="AUD-20210820-WA0076.mp3" type="audio/mpeg">
   </audio>
@@ -56,9 +54,9 @@
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
 
-  // ===== Virtual game resolution (always fits) =====
-  const VW = 360, VH = 640;           // game “screen”
-  let scale = 1, offX = 0, offY = 0;  // letterbox
+  // ===== Virtual game resolution =====
+  const VW = 360, VH = 640;
+  let scale = 1, offX = 0, offY = 0;
   function resize(){
     const dpr = window.devicePixelRatio || 1;
     canvas.width  = Math.floor(window.innerWidth * dpr);
@@ -75,16 +73,16 @@
 
   function toGameCoords(clientX, clientY){
     const rect = canvas.getBoundingClientRect();
-    const sx = (clientX - rect.left - offX) / scale;
-    const sy = (clientY - rect.top  - offY) / scale;
-    return { x: sx, y: sy };
+    return {
+      x: (clientX - rect.left - offX) / scale,
+      y: (clientY - rect.top  - offY) / scale
+    };
   }
 
   // ===== Audio =====
   const bgm = document.getElementById("bgm");
   let muted = false;
   const AC = new (window.AudioContext||window.webkitAudioContext)();
-
   function safeResumeAudio(){ if(AC.state==="suspended") AC.resume(); }
 
   function chime(){
@@ -114,10 +112,7 @@
   };
 
   // ===== Game layout =====
-  const SAFE_TOP = 16;
-  const HUD_H = 150;          // top HUD zone
-  const GROUND_Y = 270;       // horizon line
-  const SAFE_BOTTOM = 56;     // bottom text line zone
+  const GROUND_Y = 270;
   const sigText = "I love you, Dimi 💐";
 
   // ===== Messages =====
@@ -153,39 +148,36 @@
   }
 
   function drawCheese(x,y){
-    // wedge cheese, more “game-like”
+    // nicer wedge cheese + holes
     ctx.fillStyle="#ffd24a";
     ctx.beginPath();
-    ctx.moveTo(x, y+18);
-    ctx.lineTo(x+26, y+10);
-    ctx.lineTo(x+26, y+26);
+    ctx.moveTo(x, y+20);
+    ctx.lineTo(x+30, y+10);
+    ctx.lineTo(x+30, y+30);
     ctx.closePath();
     ctx.fill();
 
     ctx.fillStyle="#e7b93d";
-    ctx.fillRect(x+6, y+18, 3, 3);
-    ctx.fillRect(x+12, y+16, 3, 3);
-    ctx.fillRect(x+17, y+20, 3, 3);
+    ctx.fillRect(x+7,  y+20, 3, 3);
+    ctx.fillRect(x+14, y+17, 3, 3);
+    ctx.fillRect(x+20, y+22, 3, 3);
 
     ctx.fillStyle="rgba(0,0,0,.15)";
-    ctx.fillRect(x+24, y+12, 2, 14);
+    ctx.fillRect(x+28, y+12, 2, 18);
   }
 
   function drawFlower(x,y,petal){
-    // stem + petals + center
     ctx.fillStyle="#2fbf4b";
     ctx.fillRect(x+12, y+22, 4, 30);
     ctx.fillRect(x+5,  y+34, 8, 4);
     ctx.fillRect(x+15, y+40, 10, 4);
 
     ctx.fillStyle=petal;
-    // petals
     ctx.fillRect(x+6,  y+8,  16, 14);
     ctx.fillRect(x+2,  y+12, 6,  8);
     ctx.fillRect(x+22, y+12, 6,  8);
     ctx.fillRect(x+10, y+4,  8,  6);
 
-    // center
     ctx.fillStyle="#ffd24a";
     ctx.fillRect(x+12, y+13, 4, 4);
   }
@@ -195,36 +187,29 @@
     ctx.translate(x,y);
     ctx.scale(dir,1);
 
-    // body
     ctx.fillStyle="#b7b0b8";
     ctx.fillRect(-10, -6, 20, 12);
 
-    // head
     ctx.fillStyle="#c3bcc4";
     ctx.fillRect(8, -10, 14, 14);
 
-    // ear
     ctx.fillStyle="#c3bcc4";
     ctx.fillRect(18, -14, 6, 6);
     ctx.fillStyle="#e7a7b8";
     ctx.fillRect(20, -12, 2, 2);
 
-    // bow
     ctx.fillStyle="#ff5aa5";
     ctx.fillRect(14, -16, 4, 4);
     ctx.fillRect(19, -16, 4, 4);
     ctx.fillRect(18, -15, 1, 1);
 
-    // eye + nose
     ctx.fillStyle="#000";
     ctx.fillRect(14, -5, 2, 2);
     ctx.fillRect(22, -2, 2, 2);
 
-    // tail
     ctx.fillStyle="#caa1aa";
     ctx.fillRect(-18, -2, 8, 2);
 
-    // feet
     ctx.fillStyle="#8e8790";
     ctx.fillRect(-6, 6, 6, 3);
     ctx.fillRect(4,  6, 6, 3);
@@ -244,19 +229,17 @@
   }
 
   function drawBubbleCentered(){
-    // centered bubble in sky area
-    const bx = 20;
-    const bw = VW - 40;
-    const by = 120;
+    const bx = 18;
+    const bw = VW - 36;
+    const by = 140;   // lower so title has space
     const bh = 62;
 
-    // rainbow sparkles
     if(sparkleTimer>0){
       sparkleTimer--;
       const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"];
-      for(let i=0;i<22;i++){
-        const x = bx + (Math.random()*bw);
-        const y = by + (Math.random()*bh);
+      for(let i=0;i<26;i++){
+        const x = bx + Math.random()*bw;
+        const y = by + Math.random()*bh;
         ctx.fillStyle = colors[(Math.random()*colors.length)|0];
         ctx.fillRect(x + (Math.random()*18-9), y + (Math.random()*18-9), 2, 2);
       }
@@ -276,25 +259,27 @@
     ctx.fillText(bubbleText, VW/2, by + bh/2);
   }
 
-  // Arc title (half-circle) + waving
-  function drawArcTitle(text, t){
+  // ✅ SAFE ARC TITLE (ALWAYS FITS)
+  function drawArcLine(text, t, yBase, radius, fontPx){
     ctx.save();
-    ctx.font="16px 'Press Start 2P'";
+    ctx.font = `${fontPx}px 'Press Start 2P'`;
     ctx.textAlign="center";
     ctx.textBaseline="middle";
 
     const chars = text.split("");
     const total = chars.length;
-    const radius = 140;                 // keeps it on screen
-    const start = Math.PI*1.12;
-    const end   = Math.PI*1.88;
+
+    // tighter angles to keep inside screen
+    const start = Math.PI*1.18;
+    const end   = Math.PI*1.82;
     const step  = (end-start) / Math.max(1,total-1);
 
     for(let i=0;i<total;i++){
       const a = start + step*i;
-      const wave = Math.sin(t/18 + i*0.6) * 3;
+      const wave = Math.sin(t/18 + i*0.7) * 2.2;
+
       const x = VW/2 + Math.cos(a)*radius;
-      const y = 92 + Math.sin(a)*radius*0.52 + wave;
+      const y = yBase + Math.sin(a)*radius*0.55 + wave;
 
       // shadow
       ctx.save();
@@ -322,8 +307,8 @@
   const rat = { x: 70, y: 520, dir: 1, speed: 2.8, target: null, busy:false };
 
   function dropCheese(gx,gy){
-    if(gy < GROUND_Y+20) return; // only on grass
-    cheese = { x: gx-10, y: gy-14 };
+    if(gy < GROUND_Y+20) return;
+    cheese = { x: gx-12, y: gy-16 };
     rat.target = { x: cheese.x, y: cheese.y };
     rat.busy = true;
     showBubble("Cheese spotted! 🧀");
@@ -338,7 +323,6 @@
     rat.dir = dx >= 0 ? 1 : -1;
 
     if(d < 6){
-      // “eat” cheese -> spawn flower
       if(cheese){
         const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ff7aa5"];
         flowers.push({
@@ -366,7 +350,7 @@
   // ===== Input =====
   canvas.addEventListener("pointerdown",(e)=>{
     safeResumeAudio();
-    tryPlaySofia(); // only Sofia
+    tryPlaySofia();
     const p = toGameCoords(e.clientX, e.clientY);
     dropCheese(p.x, p.y);
   });
@@ -376,11 +360,9 @@
   function draw(){
     t++;
 
-    // letterbox background
     ctx.fillStyle="#000";
     ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
 
-    // draw “game screen”
     ctx.save();
     ctx.translate(offX, offY);
     ctx.scale(scale, scale);
@@ -393,9 +375,9 @@
     ctx.fillRect(0,0,VW,VH);
 
     // moving clouds
-    const cloudShift = (t*0.6) % (VW+120);
-    drawCloud(40 + (cloudShift*0.6), 70);
-    drawCloud(-80 + (cloudShift*0.9), 105);
+    const cloudShift = (t*0.6) % (VW+140);
+    drawCloud(30 + (cloudShift*0.55), 66);
+    drawCloud(-90 + (cloudShift*0.85), 104);
 
     // ground
     ctx.fillStyle="#155f28";
@@ -403,7 +385,7 @@
     ctx.fillStyle="rgba(0,0,0,.12)";
     for(let y=GROUND_Y; y<VH; y+=18) ctx.fillRect(0,y,VW,3);
 
-    // confetti sparkles on grass
+    // confetti sparkles
     for(let i=0;i<70;i++){
       const x = (Math.random()*VW)|0;
       const y = (GROUND_Y+20 + Math.random()*(VH-GROUND_Y-80))|0;
@@ -412,10 +394,11 @@
       ctx.fillRect(x,y,2,2);
     }
 
-    // HUD
-    drawArcTitle("Happy Valentine’s Day", t);
-    drawArcTitleSmall("My bby 💗", t);
+    // ✅ Title (2 lines) fully inside frame
+    drawArcLine("Happy Valentine’s Day", t, 54, 130, 14);
+    drawArcLine("My bby 💗",            t, 86, 110, 14);
 
+    // bubble
     if(bubbleTimer>0) bubbleTimer--;
     drawBubbleCentered();
 
@@ -426,7 +409,7 @@
     updateRat();
     drawRat(Math.round(rat.x), Math.round(rat.y), rat.dir);
 
-    // bottom signature inside game frame (center)
+    // bottom signature inside frame
     ctx.fillStyle="rgba(0,0,0,.25)";
     ctx.fillRect(0, VH-48, VW, 48);
 
