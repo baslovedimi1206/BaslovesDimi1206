@@ -1,154 +1,62 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Happy Valentine’s Day 💗</title>
-
-  <!-- Pixel-ish font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-
   <style>
-    :root{
-      --ui-pink:#ff4fa3;
-      --ui-dark:#1b1530;
-      --ui-cream:#fff2fb;
-    }
-    html,body{height:100%; margin:0; background:#0b0b16;}
-    body{display:grid; place-items:center; font-family:"Press Start 2P", system-ui;}
-
-    .wrap{
-      width:min(900px, 95vw);
-      aspect-ratio: 9/16;
-      position:relative;
-      border:6px solid #000;
-      box-shadow:0 20px 60px rgba(0,0,0,.45);
-      border-radius:18px;
-      overflow:hidden;
-      background:#000;
-    }
-
-    canvas{width:100%; height:100%; image-rendering: pixelated; display:block;}
-
-    /* Anime-ish UI overlay */
-    .ui{
-      position:absolute; inset:0;
-      pointer-events:none;
-    }
-    .title{
-      position:absolute; top:22px; left:50%;
-      transform:translateX(-50%);
-      font-size:18px;
-      color:var(--ui-pink);
-      text-shadow:
-        2px 2px 0 #000,
-        4px 4px 0 rgba(0,0,0,.35);
-      letter-spacing:1px;
-      pointer-events:none;
-      white-space:nowrap;
-    }
-
-    .hint{
-      position:absolute; bottom:78px; left:50%;
-      transform:translateX(-50%);
-      font-size:12px;
-      color:var(--ui-cream);
-      text-shadow:2px 2px 0 #000;
-      opacity:.9;
-      text-align:center;
-      line-height:1.6;
-      padding:10px 14px;
-      border-radius:14px;
-      background:rgba(27,21,48,.55);
-      border:2px solid rgba(255,255,255,.18);
-      backdrop-filter: blur(6px);
-    }
-
-    .signature{
-      position:absolute; bottom:20px; left:50%;
-      transform:translateX(-50%);
-      display:flex; gap:10px; align-items:center;
-      font-size:14px;
-      color:#fff;
-      text-shadow:2px 2px 0 #000;
-    }
-
-    .chip{
-      pointer-events:auto;
-      position:absolute; right:16px; bottom:16px;
-      display:flex; gap:10px;
-      align-items:center;
-      padding:10px 12px;
-      border-radius:14px;
-      border:2px solid rgba(255,255,255,.2);
-      background:rgba(0,0,0,.35);
-      backdrop-filter: blur(6px);
-    }
-    button{
-      font-family:"Press Start 2P", system-ui;
-      font-size:10px;
-      border:2px solid #000;
-      background:var(--ui-cream);
-      color:#000;
-      padding:10px 10px;
-      border-radius:12px;
-      cursor:pointer;
-      box-shadow:2px 2px 0 #000;
-    }
-    button:active{transform:translate(1px,1px); box-shadow:1px 1px 0 #000;}
+    html,body{height:100%;margin:0;background:#0b0b16}
+    body{display:grid;place-items:center;font-family:"Press Start 2P",system-ui}
+    .wrap{width:min(900px,95vw);aspect-ratio:9/16;position:relative;border:6px solid #000;border-radius:18px;overflow:hidden;background:#000}
+    canvas{width:100%;height:100%;image-rendering:pixelated;display:block}
+    .ui{position:absolute;inset:0;pointer-events:none}
+    .title{position:absolute;top:22px;left:50%;transform:translateX(-50%);font-size:18px;color:#ff4fa3;text-shadow:2px 2px 0 #000}
+    .hint{position:absolute;bottom:78px;left:50%;transform:translateX(-50%);font-size:12px;color:#fff;text-shadow:2px 2px 0 #000;
+      padding:10px 14px;border-radius:14px;background:rgba(27,21,48,.55);border:2px solid rgba(255,255,255,.18)}
+    .sig{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;font-size:14px;color:#fff;text-shadow:2px 2px 0 #000}
+    .chip{pointer-events:auto;position:absolute;right:16px;bottom:16px;padding:10px 12px;border-radius:14px;border:2px solid rgba(255,255,255,.2);background:rgba(0,0,0,.35)}
+    button{pointer-events:auto;font-family:"Press Start 2P";font-size:10px;border:2px solid #000;background:#fff2fb;color:#000;padding:10px;border-radius:12px;cursor:pointer;box-shadow:2px 2px 0 #000}
+    button:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #000}
   </style>
 </head>
-
 <body>
-  <div class="wrap">
-    <canvas id="c" width="360" height="640"></canvas>
+<div class="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
 
-    <div class="ui">
-      <div class="title">Happy Valentine’s Day</div>
-
-      <div class="hint">
-        Click anywhere to plant flowers 🌸<br/>
-        This field is just for you, Dimi 💗
-      </div>
-
-      <div class="signature">
-        <span style="font-size:18px;">❤️</span>
-        <span>Love, Bas</span>
-      </div>
-
-      <div class="chip">
-        <button id="muteBtn">Mute</button>
-      </div>
-    </div>
+  <div class="ui">
+    <div class="title">Happy Valentine’s Day</div>
+    <div class="hint">Click anywhere to plant flowers 🌸<br/>This field is just for you, Dimi 💗</div>
+    <div class="sig"><span style="font-size:18px;">❤️</span><span>Love, Bas</span></div>
+    <div class="chip"><button id="muteBtn">Mute</button></div>
   </div>
+</div>
 
 <script>
 (() => {
   const canvas = document.getElementById("c");
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
-
   const W = canvas.width, H = canvas.height;
+  const planted = [];
+  let t = 0;
 
-  // Simple “cute chime” sound (no copyrighted music)
+  // Tiny chime (safe)
   let muted = false;
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const AC = new (window.AudioContext||window.webkitAudioContext)();
   function chime(){
     if(muted) return;
-    const t = audioCtx.currentTime;
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = "triangle";
-    o.frequency.setValueAtTime(740, t);
-    o.frequency.exponentialRampToValueAtTime(1040, t+0.08);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.12, t+0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t+0.14);
-    o.connect(g).connect(audioCtx.destination);
-    o.start(t);
-    o.stop(t+0.16);
+    const now = AC.currentTime;
+    const o = AC.createOscillator();
+    const g = AC.createGain();
+    o.type="triangle";
+    o.frequency.setValueAtTime(700, now);
+    o.frequency.exponentialRampToValueAtTime(980, now+0.08);
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.12, now+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, now+0.14);
+    o.connect(g).connect(AC.destination);
+    o.start(now); o.stop(now+0.16);
   }
   document.getElementById("muteBtn").onclick = () => {
     muted = !muted;
@@ -156,213 +64,77 @@
     chime();
   };
 
-  // Pixel palette
-  const skyTop = "#79b7ff";
-  const skyBottom = "#bfe6ff";
-  const grass1 = "#1e7f35";
-  const grass2 = "#155f28";
-  const grass3 = "#0f4a20";
-
-  // Clouds (pixel blocks)
-  const clouds = [
-    {x: 220, y: 90, s: 1.2},
-    {x: 60,  y: 120, s: 0.9},
-    {x: 260, y: 150, s: 1.0},
-  ];
-
-  // Flowers you can “plant”
-  const planted = [];
-
-  function rand(min,max){ return Math.random()*(max-min)+min; }
-  function irand(min,max){ return Math.floor(rand(min,max+1)); }
-
-  function drawGradientSky(){
-    const grad = ctx.createLinearGradient(0,0,0,H);
-    grad.addColorStop(0, skyTop);
-    grad.addColorStop(1, skyBottom);
-    ctx.fillStyle = grad;
-    ctx.fillRect(0,0,W,H);
+  function pixelCloud(x,y,s){
+    const px = 6*s;
+    const blocks=[[1,0],[2,0],[3,0],[0,1],[1,1],[2,1],[3,1],[4,1],[1,2],[2,2],[3,2]];
+    ctx.fillStyle="#fff";
+    blocks.forEach(([bx,by])=>ctx.fillRect(Math.round(x+bx*px),Math.round(y+by*px),px,px));
   }
 
-  function pixelCloud(x,y,scale){
-    // blocky cloud made of squares
-    const px = 6*scale;
-    const blocks = [
-      [1,0],[2,0],[3,0],
-      [0,1],[1,1],[2,1],[3,1],[4,1],
-      [1,2],[2,2],[3,2]
-    ];
-    ctx.fillStyle = "#ffffff";
-    blocks.forEach(([bx,by]) => ctx.fillRect(Math.round(x+bx*px), Math.round(y+by*px), px, px));
-    ctx.fillStyle = "rgba(0,0,0,.08)";
-    ctx.fillRect(Math.round(x+px), Math.round(y+px*2), px*3, px); // tiny shadow hint
-  }
-
-  function drawGrass(){
-    const horizon = Math.floor(H*0.36);
-
-    // Hills (layered)
-    ctx.fillStyle = grass3;
-    ctx.fillRect(0,horizon, W, H-horizon);
-
-    // dotted horizon line
-    ctx.fillStyle = "#0b2f17";
-    for(let x=0;x<W;x+=10){
-      ctx.fillRect(x, horizon-6, 6, 3);
-    }
-
-    // darker stripes
-    ctx.fillStyle = "rgba(0,0,0,.12)";
-    for(let y=horizon; y<H; y+=18){
-      ctx.fillRect(0, y, W, 3);
-    }
-
-    // sprinkle tiny wildflowers
-    for(let i=0;i<120;i++){
-      const x = irand(0,W-2);
-      const y = irand(horizon+30, H-10);
-      const c = ["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff"][irand(0,4)];
-      ctx.fillStyle = c;
-      ctx.fillRect(x,y,2,2);
-    }
-  }
-
-  function flower(x,y,petalColor){
-    // pixel flower (stem + 5 petal pixels + center)
-    ctx.fillStyle = "#2fbf4b";
-    ctx.fillRect(x+2,y+6, 2, 14);     // stem
-    ctx.fillRect(x+1,y+14, 4, 2);     // leaf
-
-    ctx.fillStyle = petalColor;
-    // petals
+  function flower(x,y,color){
+    ctx.fillStyle="#2fbf4b";
+    ctx.fillRect(x+2,y+6,2,14);
+    ctx.fillRect(x+1,y+14,4,2);
+    ctx.fillStyle=color;
     ctx.fillRect(x+2,y+1,2,2);
     ctx.fillRect(x+0,y+3,2,2);
     ctx.fillRect(x+4,y+3,2,2);
     ctx.fillRect(x+2,y+5,2,2);
-
-    // center
-    ctx.fillStyle = "#ffd24a";
+    ctx.fillStyle="#ffd24a";
     ctx.fillRect(x+2,y+3,2,2);
   }
 
-  function drawNameFlowers(){
-    // big flower line that spells DIMI
-    // Simple: place “letters” with pixel blocks, and add flowers under
-    const baseY = Math.floor(H*0.52);
-    const startX = 62;
+  function draw(){
+    t++;
+    // sky
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,"#79b7ff");
+    g.addColorStop(1,"#bfe6ff");
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
 
-    // pixel letters
-    ctx.fillStyle = "#ffffff";
-    ctx.shadowColor = "rgba(0,0,0,.35)";
-    ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2; ctx.shadowBlur = 0;
+    // moving clouds
+    pixelCloud(55 + Math.sin(t/80)*4, 90, 1.0);
+    pixelCloud(210 + Math.sin(t/95)*5, 120, 1.2);
 
-    const scale = 3; // letter pixel size
-    const letters = {
-      D: [
-        "1110",
-        "1001",
-        "1001",
-        "1001",
-        "1110"
-      ],
-      I: [
-        "111",
-        "010",
-        "010",
-        "010",
-        "111"
-      ],
-      M: [
-        "10001",
-        "11011",
-        "10101",
-        "10001",
-        "10001"
-      ]
-    };
-
-    function drawLetter(pattern, x, y){
-      for(let r=0;r<pattern.length;r++){
-        for(let c=0;c<pattern[r].length;c++){
-          if(pattern[r][c]==="1"){
-            ctx.fillRect(x+c*scale, y+r*scale, scale, scale);
-          }
-        }
-      }
-    }
-
-    // D I M I
-    drawLetter(letters.D, startX, baseY);
-    drawLetter(letters.I, startX+60, baseY);
-    drawLetter(letters.M, startX+110, baseY);
-    drawLetter(letters.I, startX+190, baseY);
-
-    ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
-
-    // flowers under letters
-    const colors = ["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ff7aa5","#7fff9a"];
-    for(let i=0;i<9;i++){
-      flower(startX + i*28, baseY+40, colors[i%colors.length]);
-    }
-  }
-
-  // sparkles (anime vibe)
-  const sparkles = Array.from({length: 18}, () => ({
-    x: rand(30, W-30),
-    y: rand(80, H*0.33),
-    r: rand(1,2),
-    t: rand(0,Math.PI*2),
-    sp: rand(0.02,0.05)
-  }));
-
-  function drawSparkles(){
-    sparkles.forEach(s=>{
-      s.t += s.sp;
-      const a = 0.35 + 0.35*Math.sin(s.t);
-      ctx.fillStyle = `rgba(255,255,255,${a})`;
-      ctx.fillRect(Math.round(s.x), Math.round(s.y), 2, 2);
-      ctx.fillRect(Math.round(s.x+3), Math.round(s.y+3), 2, 2);
-    });
-  }
-
-  // animation loop
-  let t = 0;
-  function frame(){
-    t += 1;
-    drawGradientSky();
-
-    // move clouds a tiny bit
-    clouds.forEach((cl,i)=>{
-      const drift = Math.sin((t/90)+(i*1.7))*0.6;
-      pixelCloud(cl.x + drift, cl.y, cl.s);
-    });
-
-    drawSparkles();
-    drawGrass();
-    drawNameFlowers();
-
-    // draw planted flowers
-    planted.forEach(p=>{
-      flower(p.x, p.y, p.c);
-    });
-
-    requestAnimationFrame(frame);
-  }
-  frame();
-
-  // click to plant flower
-  canvas.addEventListener("pointerdown", (e) => {
-    // ensure audio context can play on iOS
-    if(audioCtx.state === "suspended") audioCtx.resume();
-
-    const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) * (W / rect.width);
-    const my = (e.clientY - rect.top)  * (H / rect.height);
-
+    // grass
     const horizon = Math.floor(H*0.36);
-    if(my < horizon+10) return; // only plant in grass
+    ctx.fillStyle="#155f28"; ctx.fillRect(0,horizon,W,H-horizon);
+    ctx.fillStyle="rgba(0,0,0,.12)";
+    for(let y=horizon;y<H;y+=18) ctx.fillRect(0,y,W,3);
 
-    const colors = ["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ff7aa5","#7fff9a"];
+    // name (simple)
+    ctx.fillStyle="#fff";
+    ctx.fillRect(70, 340, 220, 6);
+    ctx.fillStyle="#ff4fa3";
+    ctx.fillText("", 0, 0); // keep font loaded
+
+    // default flowers line
+    const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#7fff9a"];
+    for(let i=0;i<9;i++) flower(60+i*28, 385, colors[i%colors.length]);
+
+    // planted flowers
+    planted.forEach(p => flower(p.x,p.y,p.c));
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+
+  canvas.addEventListener("pointerdown", (e) => {
+    if(AC.state==="suspended") AC.resume();
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX-rect.left) * (W/rect.width);
+    const my = (e.clientY-rect.top)  * (H/rect.height);
+    const horizon = Math.floor(H*0.36);
+    if(my < horizon+10) return;
+    const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#7fff9a"];
     planted.push({
       x: Math.max(0, Math.min(W-8, Math.round(mx-4))),
-      y: Math.max(horizon+20, Math.min(H-26,
+      y: Math.max(horizon+20, Math.min(H-26, Math.round(my-18))),
+      c: colors[Math.floor(Math.random()*colors.length)]
+    });
+    chime();
+  });
+})();
+</script>
+</body>
+</html>
