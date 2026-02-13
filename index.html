@@ -74,7 +74,6 @@
     const rect = canvas.getBoundingClientRect();
     let x = (clientX - rect.left - offX) / scale;
     let y = (clientY - rect.top  - offY) / scale;
-    // ✅ keep taps inside the game screen
     x = clamp(x, 0, VW);
     y = clamp(y, 0, VH);
     return { x, y };
@@ -85,6 +84,7 @@
   let muted = false;
   const AC = new (window.AudioContext||window.webkitAudioContext)();
   function safeResumeAudio(){ if(AC.state==="suspended") AC.resume(); }
+
   function chime(){
     if(muted) return;
     const now = AC.currentTime;
@@ -99,9 +99,11 @@
     o.connect(g).connect(AC.destination);
     o.start(now); o.stop(now+0.18);
   }
+
   async function tryPlaySofia(){
     try { bgm.muted = muted; await bgm.play(); } catch(e) {}
   }
+
   document.getElementById("muteBtn").onclick = () => {
     muted = !muted;
     bgm.muted = muted;
@@ -113,35 +115,32 @@
   const GROUND_Y = 260;
   const sigText = "I love you, Dimi";
 
-  // ===== Messages =====
+  // ===== Messages (20) =====
   const messages = [
-  "I'm so proud of you.",
-  "You are my sunshine.",
-  "You are the best girlfriend.",
-  "You make my days brighter.",
-  "I believe in you always.",
-  "You are so strong.",
-  "You are so kind.",
-  "You inspire me every day.",
-  "I love your smile so much.",
-  "I choose you, again and again.",
-  "You mean the world to me.",
-  "You are my favorite person.",
-  "You make my heart feel calm.",
-  "I'm grateful for you every day.",
-  "You deserve all good things.",
-  "Your laugh is my favorite sound.",
-  "Being with you feels like home.",
-  "You are more than enough.",
-  "I adore everything about you.",
-  "Forever and always, my bby 💗"
-];
-  
-showBubble(messages[msgIndex % messages.length]);
-msgIndex++;
-
+    "I'm so proud of you.",
+    "You are my sunshine.",
+    "You are the best girlfriend.",
+    "You make my days brighter.",
+    "I believe in you always.",
+    "You are so strong.",
+    "You are so kind.",
+    "You inspire me every day.",
+    "I love your smile so much.",
+    "I choose you, again and again.",
+    "You mean the world to me.",
+    "You are my favorite person.",
+    "You make my heart feel calm.",
+    "I'm grateful for you every day.",
+    "You deserve all good things.",
+    "Your laugh is my favorite sound.",
+    "Being with you feels like home.",
+    "You are more than enough.",
+    "I adore everything about you.",
+    "Forever and always, my bby 💗"
+  ];
   let msgIndex = 0;
-  let bubbleText = "Tap grass to feed your rat ";
+
+  let bubbleText = "Tap grass to feed your rat 🧀";
   let bubbleTimer = 220;
   let sparkleTimer = 0;
 
@@ -163,73 +162,32 @@ msgIndex++;
     fill ? ctx.fill() : ctx.stroke();
   }
 
-  function wrapLines(text, maxWidth){
-  const words = text.split(" ");
-  const lines = [];
-  let line = "";
-  for(const w of words){
-    const test = line ? (line + " " + w) : w;
-    if(ctx.measureText(test).width <= maxWidth) line = test;
-    else { if(line) lines.push(line); line = w; }
-  }
-  if(line) lines.push(line);
-  return lines.slice(0, 3); // max 3 lines
-}
+  function drawBubbleCentered(){
+    const bx = 30;
+    const bw = VW - 60;
+    const by = 160;
+    const bh = 56;
 
-function drawBubbleCentered(){
-  // ✅ Middle of the sky = between title area and ground
-  const skyTop = 120;          // below title
-  const skyBottom = GROUND_Y - 20;
-  const midY = (skyTop + skyBottom) / 2;
-
-  const bw = VW - 60;          // safe width
-  const bx = (VW - bw) / 2;
-  const maxTextW = bw - 30;
-
-  ctx.font="11px 'Press Start 2P'";
-  const lines = wrapLines(bubbleText, maxTextW);
-  const lineH = 16;
-  const bh = 22 + lines.length * lineH;
-  const by = midY - bh/2;
-
-  // rainbow sparkles around bubble
-  if(sparkleTimer>0){
-    sparkleTimer--;
-    const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"];
-    for(let i=0;i<26;i++){
-      const x = bx + Math.random()*bw;
-      const y = by + Math.random()*bh;
-      ctx.fillStyle = colors[(Math.random()*colors.length)|0];
-      ctx.fillRect(x + (Math.random()*14-7), y + (Math.random()*14-7), 2, 2);
+    if(sparkleTimer>0){
+      sparkleTimer--;
+      const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"];
+      for(let i=0;i<22;i++){
+        const x = bx + Math.random()*bw;
+        const y = by + Math.random()*bh;
+        ctx.fillStyle = colors[(Math.random()*colors.length)|0];
+        ctx.fillRect(x, y, 2, 2);
+      }
     }
-  }
 
-  ctx.fillStyle="rgba(27,21,48,.58)";
-  roundRect(bx, by, bw, bh, 14, true);
-
-  ctx.strokeStyle="rgba(255,255,255,.20)";
-  ctx.lineWidth=2;
-  roundRect(bx, by, bw, bh, 14, false);
-
-  ctx.fillStyle="#fff";
-  ctx.textAlign="center";
-  ctx.textBaseline="middle";
-
-  let ty = by + 14 + lineH/2;
-  for(const ln of lines){
-    ctx.fillText(ln, VW/2, ty);
-    ty += lineH;
-  }
-}
-
-    ctx.fillStyle="rgba(27,21,48,.58)";
+    ctx.fillStyle="rgba(40,40,90,.65)";
     roundRect(bx,by,bw,bh,14,true);
+
     ctx.strokeStyle="rgba(255,255,255,.2)";
     ctx.lineWidth=2;
     roundRect(bx,by,bw,bh,14,false);
 
     ctx.fillStyle="#fff";
-    ctx.font="12px 'Press Start 2P'";
+    ctx.font="11px 'Press Start 2P'";
     ctx.textAlign="center";
     ctx.textBaseline="middle";
     ctx.fillText(bubbleText, VW/2, by + bh/2);
@@ -252,16 +210,8 @@ function drawBubbleCentered(){
       const wave = Math.sin(t/18 + i*0.7) * 2.2;
       const x = VW/2 + Math.cos(a)*radius;
       const y = yBase + Math.sin(a)*radius*0.55 + wave;
-      
-ctx.fillStyle="rgba(0,0,0,.25)";
-ctx.fillRect(0, VH-48, VW, 48);
 
-ctx.fillStyle="#fff";
-ctx.font="14px 'Press Start 2P'";
-ctx.textAlign="center";
-ctx.textBaseline="middle";
-ctx.fillText("I love you, Dimi ", VW/2, VH-24);
-
+      // shadow
       ctx.save();
       ctx.translate(x+2,y+2);
       ctx.rotate(a+Math.PI/2);
@@ -269,6 +219,7 @@ ctx.fillText("I love you, Dimi ", VW/2, VH-24);
       ctx.fillText(chars[i],0,0);
       ctx.restore();
 
+      // text
       ctx.save();
       ctx.translate(x,y);
       ctx.rotate(a+Math.PI/2);
@@ -279,7 +230,7 @@ ctx.fillText("I love you, Dimi ", VW/2, VH-24);
     ctx.restore();
   }
 
-  // clouds / sprites (BIGGER)
+  // clouds / sprites
   function drawCloud(x,y){
     ctx.fillStyle="#fff";
     ctx.fillRect(x+8,y,28,14);
@@ -371,18 +322,13 @@ ctx.fillText("I love you, Dimi ", VW/2, VH-24);
   // ===== Game state =====
   const flowers = [];
   let cheese = null;
-
-  // ✅ spawn rat clearly visible on grass
   const rat = { x: 70, y: GROUND_Y + 210, dir: 1, speed: 3.0, target: null, busy:false };
 
   function dropCheese(gx,gy){
-    // only drop on grass
     if(gy < GROUND_Y+10) return;
-
     cheese = { x: gx-12, y: gy-16 };
     rat.target = { x: cheese.x, y: cheese.y };
     rat.busy = true;
-
     showBubble("Cheese spotted! 🧀");
     chime();
   }
@@ -397,11 +343,7 @@ ctx.fillText("I love you, Dimi ", VW/2, VH-24);
     if(d < 7){
       if(cheese){
         const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ff7aa5"];
-        flowers.push({
-          x: cheese.x - 10,
-          y: cheese.y - 64,
-          c: colors[(Math.random()*colors.length)|0]
-        });
+        flowers.push({ x: cheese.x - 10, y: cheese.y - 64, c: colors[(Math.random()*colors.length)|0] });
         cheese = null;
 
         showBubble(messages[msgIndex % messages.length]);
@@ -415,8 +357,6 @@ ctx.fillText("I love you, Dimi ", VW/2, VH-24);
 
     rat.x += (dx/d) * rat.speed;
     rat.y += (dy/d) * rat.speed;
-
-    // ✅ keep rat inside visible grass area
     rat.x = clamp(rat.x, 22, VW-22);
     rat.y = clamp(rat.y, GROUND_Y+60, VH-90);
   }
@@ -463,40 +403,9 @@ ctx.fillText("I love you, Dimi ", VW/2, VH-24);
     drawArcLine("Happy Valentine’s Day", t, 74, 105, 13);
     drawArcLine("My bby 💗",            t, 102, 85, 13);
 
-
     // bubble
     if(bubbleTimer>0) bubbleTimer--;
-    function drawBubbleCentered(){
-  const bx = 30;
-  const bw = VW - 60;
-  const by = 160;
-  const bh = 56;
-
-  if(sparkleTimer>0){
-    sparkleTimer--;
-    const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"];
-    for(let i=0;i<20;i++){
-      const x = bx + Math.random()*bw;
-      const y = by + Math.random()*bh;
-      ctx.fillStyle = colors[(Math.random()*colors.length)|0];
-      ctx.fillRect(x, y, 2, 2);
-    }
-  }
-
-  ctx.fillStyle="rgba(40,40,90,.65)";
-  roundRect(bx,by,bw,bh,14,true);
-
-  ctx.strokeStyle="rgba(255,255,255,.2)";
-  ctx.lineWidth=2;
-  roundRect(bx,by,bw,bh,14,false);
-
-  ctx.fillStyle="#fff";
-  ctx.font="11px 'Press Start 2P'";
-  ctx.textAlign="center";
-  ctx.textBaseline="middle";
-  ctx.fillText(bubbleText, VW/2, by + bh/2);
-}
-
+    drawBubbleCentered();
 
     // objects
     flowers.forEach(f => drawFlower(f.x, f.y, f.c));
@@ -517,6 +426,9 @@ ctx.fillText("I love you, Dimi ", VW/2, VH-24);
     ctx.restore();
     requestAnimationFrame(draw);
   }
+
+  // initial hint
+  showBubble("Tap grass to feed your rat 🧀");
   draw();
 })();
 </script>
