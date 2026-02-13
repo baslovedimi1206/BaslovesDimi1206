@@ -365,49 +365,53 @@
   // Title (arc + more spacing, always in frame)
   // =========================
   function drawArcLine(text, t, yBase, radius, fontPx, spacingBoost){
+  ctx.save();
+  ctx.font = `${fontPx}px 'Press Start 2P'`;
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+
+  const chars = text.split("");
+  const total = chars.length;
+
+  // wider arc range
+  const start = Math.PI*1.20;
+  const end   = Math.PI*1.80;
+
+  // bigger spacing
+  const stepBase = (end-start) / Math.max(1,total-1);
+  const step = stepBase * spacingBoost;
+
+  // recenter widened span so it stays inside frame
+  const span = step * (total-1);
+  const start2 = (start + end - span) / 2;
+
+  for(let i=0;i<total;i++){
+    const a = start2 + step*i;
+
+    // soft wave motion
+    const wave = Math.sin(t/18 + i*0.6) * 2.2;
+
+    const x = VW/2 + Math.cos(a)*radius;
+    const y = yBase + Math.sin(a)*radius*0.48 + wave;
+
+    // glow effect
     ctx.save();
-    ctx.font = `${fontPx}px 'Press Start 2P'`;
-    ctx.textAlign="center";
-    ctx.textBaseline="middle";
+    ctx.translate(x,y);
+    ctx.rotate(a+Math.PI/2);
 
-    const chars = text.split("");
-    const total = chars.length;
+    ctx.shadowColor = "#ff7acb";
+    ctx.shadowBlur = 12;
 
-    // wider arc but clamped so it doesn't go off-screen
-    const start = Math.PI*1.25;
-    const end   = Math.PI*1.75;
+    ctx.fillStyle="#ff66c4";   // brighter pink
+    ctx.fillText(chars[i],0,0);
 
-    const stepBase = (end-start) / Math.max(1,total-1);
-    const step = stepBase * spacingBoost;
-
-    const span = step * (total-1);
-    const start2 = (start + end - span) / 2;
-
-    for(let i=0;i<total;i++){
-      const a = start2 + step*i;
-      const wave = Math.sin(t/18 + i*0.7) * 1.8;
-
-      const x = VW/2 + Math.cos(a)*radius;
-      const y = yBase + Math.sin(a)*radius*0.50 + wave;
-
-      // shadow
-      ctx.save();
-      ctx.translate(x+2,y+2);
-      ctx.rotate(a+Math.PI/2);
-      ctx.fillStyle="#000";
-      ctx.fillText(chars[i],0,0);
-      ctx.restore();
-
-      // pink
-      ctx.save();
-      ctx.translate(x,y);
-      ctx.rotate(a+Math.PI/2);
-      ctx.fillStyle="#ff4fa3";
-      ctx.fillText(chars[i],0,0);
-      ctx.restore();
-    }
+    ctx.shadowBlur = 0;
     ctx.restore();
   }
+
+  ctx.restore();
+}
+
 
   // =========================
   // Message bubble (middle of sky)
@@ -649,8 +653,8 @@
     drawMeadow();
 
     // title (arc, spaced, stays in frame)
-    drawArcLine("Happy Valentine’s Day", t, 72, 108, 13, 1.10);
-    drawArcLine("My bby",               t, 102, 86,  13, 1.18);
+    drawArcLine("Happy Valentine’s Day My bby", t, 78, 115, 14, 1.25);
+
 
     // bubble (middle sky)
     if(bubbleTimer>0) bubbleTimer--;
