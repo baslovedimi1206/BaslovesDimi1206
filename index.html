@@ -112,9 +112,9 @@
     chime();
   };
 
-  // ===== Layout (THIS DOESN’T DRAW BY ITSELF — draw() uses it) =====
+  // ===== Layout =====
   const GROUND_Y = 260;
-  const sigText = "I love you, Dimi 💐";
+  const sigText = "I love you, Dimi — from Bas 💗";
 
   // ===== Messages (20) =====
   const messages = [
@@ -141,7 +141,7 @@
   ];
   let msgIndex = 0;
 
-  let bubbleText = "Tap grass to drop cheese 🧀";
+  let bubbleText = "Tap anywhere to drop cheese 🧀";
   let bubbleTimer = 220;
   let sparkleTimer = 0;
 
@@ -231,7 +231,6 @@
   }
 
   function drawRainbow(){
-    // soft pixel rainbow arc (top sky)
     const cx = VW/2;
     const cy = 250;
     const rings = [
@@ -253,7 +252,7 @@
     ctx.restore();
   }
 
-  // ===== Title =====
+  // ===== Title (more spacing) =====
   function drawArcLine(text, t, yBase, radius, fontPx){
     ctx.save();
     ctx.font = `${fontPx}px 'Press Start 2P'`;
@@ -264,15 +263,22 @@
     const total = chars.length;
     const start = Math.PI*1.23;
     const end   = Math.PI*1.77;
-    const step  = (end-start) / Math.max(1,total-1);
+
+    // ✅ extra spacing between letters
+    const spacingBoost = 1.12;
+    const stepBase = (end-start) / Math.max(1,total-1);
+    const step = stepBase * spacingBoost;
+
+    // center the widened arc so it stays in frame
+    const span = step * (total-1);
+    const start2 = (start + end - span) / 2;
 
     for(let i=0;i<total;i++){
-      const a = start + step*i;
+      const a = start2 + step*i;
       const wave = Math.sin(t/18 + i*0.7) * 2.2;
       const x = VW/2 + Math.cos(a)*radius;
       const y = yBase + Math.sin(a)*radius*0.55 + wave;
 
-      // shadow
       ctx.save();
       ctx.translate(x+2,y+2);
       ctx.rotate(a+Math.PI/2);
@@ -280,7 +286,6 @@
       ctx.fillText(chars[i],0,0);
       ctx.restore();
 
-      // text
       ctx.save();
       ctx.translate(x,y);
       ctx.rotate(a+Math.PI/2);
@@ -379,12 +384,16 @@
 
   const rat = { x: 70, y: GROUND_Y + 210, dir: 1, speed: 3.0, target: null, busy:false };
 
+  // ✅ Tap anywhere to feed (no grass restriction)
   function dropCheese(gx,gy){
-    if(gy < GROUND_Y+10) return;
+    gx = clamp(gx, 20, VW-20);
+    gy = clamp(gy, 120, VH-90);
+
     cheese = { x: gx-12, y: gy-16 };
     rat.target = { x: cheese.x, y: cheese.y };
     rat.busy = true;
-    showBubble("Cheese spotted! 🧀");
+
+    showBubble("Yum! 🧀");
     chime();
   }
 
@@ -401,7 +410,6 @@
         flowers.push({ x: cheese.x - 10, y: cheese.y - 64, c: colors[(Math.random()*colors.length)|0] });
         cheese = null;
 
-        // ✅ loop forever
         showBubble(messages[msgIndex % messages.length]);
         msgIndex++;
         chime();
@@ -471,7 +479,7 @@
       ctx.fillRect(x,y,2,2);
     }
 
-    // title (always inside frame)
+    // title (more spacing)
     drawArcLine("Happy Valentine’s Day", t, 74, 105, 13);
     drawArcLine("My bby 💗",            t, 102, 85, 13);
 
@@ -486,20 +494,21 @@
     updateRat();
     drawRat(Math.round(rat.x), Math.round(rat.y), rat.dir);
 
-    // bottom signature (USES sigText)
+    // bottom signature (bigger bar so always visible)
     ctx.fillStyle="rgba(0,0,0,.25)";
-    ctx.fillRect(0, VH-48, VW, 48);
+    ctx.fillRect(0, VH-58, VW, 58);
+
     ctx.fillStyle="#fff";
-    ctx.font="14px 'Press Start 2P'";
+    ctx.font="13px 'Press Start 2P'";
     ctx.textAlign="center";
     ctx.textBaseline="middle";
-    ctx.fillText(sigText, VW/2, VH-24);
+    ctx.fillText(sigText, VW/2, VH-29);
 
     ctx.restore();
     requestAnimationFrame(draw);
   }
 
-  showBubble("Tap grass to drop cheese 🧀");
+  showBubble("Tap anywhere to drop cheese 🧀");
   draw();
 })();
 </script>
