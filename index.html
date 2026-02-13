@@ -11,12 +11,15 @@
     .wrap{position:relative;width:100vw;height:100vh}
     canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 
-    /* move button higher so it never covers bottom text */
+    /* Mute button - safe for iPhone / Instagram browser */
     .btn{
-      position:absolute; right:14px; bottom:220px;
+      position:absolute;
+      right:14px;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 140px);
       background:rgba(0,0,0,.35);
       border:2px solid rgba(255,255,255,.18);
-      border-radius:14px; padding:10px;
+      border-radius:14px;
+      padding:10px;
       backdrop-filter: blur(6px);
     }
     button{
@@ -53,13 +56,12 @@
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
 
-  // ===== Virtual game screen =====
+  // =========================
+  // Virtual game screen
+  // =========================
   const VW = 360, VH = 640;
   let scale = 1, offX = 0, offY = 0;
 
-  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
-
-  // ✅ COVER mode so it fills phone screen (looks like real game)
   function resize(){
     const dpr = window.devicePixelRatio || 1;
     canvas.width  = Math.floor(window.innerWidth * dpr);
@@ -67,12 +69,15 @@
     ctx.setTransform(1,0,0,1,0,0);
     ctx.scale(dpr, dpr);
 
-    scale = Math.max(window.innerWidth / VW, window.innerHeight / VH);
+    // "contain" so everything stays visible
+    scale = Math.min(window.innerWidth / VW, window.innerHeight / VH);
     offX = (window.innerWidth  - VW * scale) / 2;
     offY = (window.innerHeight - VH * scale) / 2;
   }
   window.addEventListener("resize", resize);
   resize();
+
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 
   function toGameCoords(clientX, clientY){
     const rect = canvas.getBoundingClientRect();
@@ -83,9 +88,12 @@
     return { x, y };
   }
 
-  // ===== Audio =====
+  // =========================
+  // Audio (Sofia only + chime)
+  // =========================
   const bgm = document.getElementById("bgm");
   let muted = false;
+
   const AC = new (window.AudioContext||window.webkitAudioContext)();
   const safeResumeAudio = ()=>{ if(AC.state==="suspended") AC.resume(); };
 
@@ -98,7 +106,7 @@
     o.frequency.setValueAtTime(760, now);
     o.frequency.exponentialRampToValueAtTime(1120, now+0.09);
     g.gain.setValueAtTime(0.0001, now);
-    g.gain.exponentialRampToValueAtTime(0.12, now+0.02);
+    g.gain.exponentialRampToValueAtTime(0.10, now+0.02);
     g.gain.exponentialRampToValueAtTime(0.0001, now+0.16);
     o.connect(g).connect(AC.destination);
     o.start(now); o.stop(now+0.18);
@@ -115,11 +123,17 @@
     chime();
   };
 
-  // ===== Layout =====
-  const GROUND_Y = 260;
-  const sigText = "I love you, Dimi — from Bas 💗";
+  // =========================
+  // Layout
+  // =========================
+  const GROUND_Y = 250;                 // slightly higher so bottom text never gets cut
+  const FOOTER_H = 64;
+  const FOOTER_Y = VH - 110;            // lifted up for iPhone browser bars
+  const sigText  = "I love you, Dimi — from Bas 💗";
 
-  // ===== Messages (20) =====
+  // =========================
+  // 20 Messages (loop)
+  // =========================
   const messages = [
     "I'm so proud of you.",
     "You are my sunshine.",
@@ -154,7 +168,9 @@
     sparkleTimer = 90;
   }
 
-  // ===== Helpers =====
+  // =========================
+  // Helpers
+  // =========================
   function roundRect(x,y,w,h,r,fill){
     ctx.beginPath();
     ctx.moveTo(x+r,y);
@@ -179,84 +195,176 @@
     return lines.slice(0, 3);
   }
 
-  function drawBubbleMiddleSky(){
-    const skyTop = 120;
-    const skyBottom = GROUND_Y - 16;
-    const midY = (skyTop + skyBottom) / 2;
-
-    const bw = VW - 60;
-    const bx = (VW - bw) / 2;
-
-    ctx.font="11px 'Press Start 2P'";
-    const lines = wrapLines(bubbleText, bw - 28);
-    const lineH = 16;
-    const bh = 22 + lines.length * lineH;
-    const by = midY - bh/2;
-
-    if(sparkleTimer>0){
-      sparkleTimer--;
-      const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"];
-      for(let i=0;i<36;i++){
-        const x = bx + Math.random()*bw;
-        const y = by + Math.random()*bh;
-        ctx.fillStyle = colors[(Math.random()*colors.length)|0];
-        ctx.fillRect(x + (Math.random()*16-8), y + (Math.random()*16-8), 2, 2);
-      }
-    }
-
-    ctx.fillStyle="rgba(40,40,90,.65)";
-    roundRect(bx,by,bw,bh,14,true);
-
-    ctx.strokeStyle="rgba(255,255,255,.2)";
-    ctx.lineWidth=2;
-    roundRect(bx,by,bw,bh,14,false);
-
-    ctx.fillStyle="#fff";
-    ctx.textAlign="center";
-    ctx.textBaseline="middle";
-    let ty = by + 14 + lineH/2;
-    for(const ln of lines){
-      ctx.fillText(ln, VW/2, ty);
-      ty += lineH;
-    }
+  // =========================
+  // Background: meadow like screenshot
+  // =========================
+  // seeded random so flowers don’t flicker
+  let seed = 1337;
+  function rnd(){
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
   }
 
-  // ===== Sky decorations =====
-  function drawCloud(x,y,scale=1){
-    ctx.save();
-    ctx.translate(x,y);
-    ctx.scale(scale,scale);
-    ctx.fillStyle="#fff";
-    ctx.fillRect(8,0,28,14);
-    ctx.fillRect(0,6,44,16);
-    ctx.fillRect(12,18,28,12);
-    ctx.restore();
-  }
+  const meadowDots = [];
+  const meadowFlowers = [];
+  const NUM_DOTS = 420;
+  const NUM_TINY = 240;
 
-  function drawRainbow(){
+  function initMeadow(){
+    meadowDots.length = 0;
+    meadowFlowers.length = 0;
+
+    for(let i=0;i<NUM_DOTS;i++){
+      meadowDots.push({
+        x: Math.floor(rnd()*VW),
+        y: Math.floor(GROUND_Y + 12 + rnd()*(VH - GROUND_Y - 150)),
+        c: ["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"][Math.floor(rnd()*6)],
+        s: rnd() < 0.75 ? 2 : 3
+      });
+    }
+
+    for(let i=0;i<NUM_TINY;i++){
+      const y = Math.floor(GROUND_Y + 8 + rnd()*(VH - GROUND_Y - 120));
+      meadowFlowers.push({
+        x: Math.floor(rnd()*VW),
+        y,
+        // smaller on far (higher), bigger on near (lower)
+        sc: 0.55 + ( (y - GROUND_Y) / (VH - GROUND_Y) ) * 0.85,
+        pet: ["#ff74b9","#ffd24a","#7fd6ff","#b68cff","#ff7aa5","#ffffff"][Math.floor(rnd()*6)],
+        ctr: ["#ffd24a","#fff2fb","#ffffff"][Math.floor(rnd()*3)]
+      });
+    }
+  }
+  initMeadow();
+
+  function drawSky(t){
+    // smooth sky gradient
+    const sky = ctx.createLinearGradient(0,0,0,VH);
+    sky.addColorStop(0,"#5fb0ff");
+    sky.addColorStop(1,"#bfe6ff");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0,0,VW,VH);
+
+    // soft rainbow arc behind title (subtle, like example)
     const cx = VW/2;
-    const cy = 240;
+    const cy = 252;
     const rings = [
-      { r: 250, c: "rgba(255,80,130,.30)" },
-      { r: 242, c: "rgba(255,170,70,.30)" },
-      { r: 234, c: "rgba(255,230,90,.30)" },
-      { r: 226, c: "rgba(120,255,140,.30)" },
-      { r: 218, c: "rgba(120,210,255,.30)" },
-      { r: 210, c: "rgba(180,140,255,.30)" },
+      { r: 260, c: "rgba(255,80,130,.18)" },
+      { r: 252, c: "rgba(255,170,70,.18)" },
+      { r: 244, c: "rgba(255,230,90,.18)" },
+      { r: 236, c: "rgba(120,255,140,.18)" },
+      { r: 228, c: "rgba(120,210,255,.18)" },
+      { r: 220, c: "rgba(180,140,255,.18)" },
     ];
     ctx.save();
     ctx.lineWidth = 10;
     for(const ring of rings){
       ctx.strokeStyle = ring.c;
       ctx.beginPath();
-      ctx.arc(cx, cy, ring.r, Math.PI*1.08, Math.PI*1.92);
+      ctx.arc(cx, cy, ring.r, Math.PI*1.10, Math.PI*1.90);
       ctx.stroke();
     }
     ctx.restore();
+
+    // pixel clouds
+    const shiftA = (t*0.42) % (VW+220);
+    const shiftB = (t*0.60) % (VW+240);
+    const shiftC = (t*0.78) % (VW+260);
+
+    drawCloud(-90 + shiftA*0.85, 60, 0.95);
+    drawCloud( 40 + shiftB*0.70, 92, 1.10);
+    drawCloud(-140+ shiftC*0.62, 122, 0.85);
   }
 
-  // ===== Title (more spacing) =====
-  function drawArcLine(text, t, yBase, radius, fontPx){
+  function drawCloud(x,y,sc=1){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.scale(sc,sc);
+    ctx.fillStyle="#fff";
+    ctx.fillRect(10,0,28,14);
+    ctx.fillRect(0,7,46,16);
+    ctx.fillRect(14,20,28,12);
+    ctx.restore();
+  }
+
+  function drawHills(t){
+    // rolling hill layers like screenshot
+    const wave1 = (x)=> Math.sin((x/44) + t/80) * 3;
+    const wave2 = (x)=> Math.sin((x/56) + t/95) * 2;
+
+    // back hill
+    ctx.fillStyle="#2d8a37";
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y-24);
+    for(let x=0; x<=VW; x+=8){
+      const y = (GROUND_Y-24) + wave2(x);
+      ctx.lineTo(x,y);
+    }
+    ctx.lineTo(VW, GROUND_Y+10);
+    ctx.lineTo(0,  GROUND_Y+10);
+    ctx.closePath();
+    ctx.fill();
+
+    // front hill
+    ctx.fillStyle="#1f7a2f";
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y-8);
+    for(let x=0; x<=VW; x+=8){
+      const y = (GROUND_Y-8) + wave1(x);
+      ctx.lineTo(x,y);
+    }
+    ctx.lineTo(VW, GROUND_Y+18);
+    ctx.lineTo(0,  GROUND_Y+18);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawMeadow(){
+    // base grass
+    ctx.fillStyle="#155f28";
+    ctx.fillRect(0,GROUND_Y,VW,VH-GROUND_Y);
+
+    // subtle stripe lines
+    ctx.fillStyle="rgba(0,0,0,.12)";
+    for(let y=GROUND_Y; y<VH; y+=18) ctx.fillRect(0,y,VW,3);
+
+    // dots/sparkles
+    for(const d of meadowDots){
+      ctx.fillStyle = d.c;
+      ctx.fillRect(d.x, d.y, d.s, d.s);
+    }
+
+    // tiny flowers sprinkled everywhere
+    for(const f of meadowFlowers){
+      drawTinyFlower(f.x, f.y, f.pet, f.ctr, f.sc);
+    }
+  }
+
+  function drawTinyFlower(x,y,petal,center,sc){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.scale(sc,sc);
+
+    // stem
+    ctx.fillStyle="#2fbf4b";
+    ctx.fillRect(0,6,2,10);
+
+    // petals (simple 4-petal pixel look)
+    ctx.fillStyle=petal;
+    ctx.fillRect(-2,2,6,4);
+    ctx.fillRect(0,0,2,8);
+
+    // center
+    ctx.fillStyle=center;
+    ctx.fillRect(0,3,2,2);
+
+    ctx.restore();
+  }
+
+  // =========================
+  // Title (arc + more spacing, always in frame)
+  // =========================
+  function drawArcLine(text, t, yBase, radius, fontPx, spacingBoost){
     ctx.save();
     ctx.font = `${fontPx}px 'Press Start 2P'`;
     ctx.textAlign="center";
@@ -264,10 +372,11 @@
 
     const chars = text.split("");
     const total = chars.length;
-    const start = Math.PI*1.23;
-    const end   = Math.PI*1.77;
 
-    const spacingBoost = 1.16; // a bit more spacing
+    // wider arc but clamped so it doesn't go off-screen
+    const start = Math.PI*1.25;
+    const end   = Math.PI*1.75;
+
     const stepBase = (end-start) / Math.max(1,total-1);
     const step = stepBase * spacingBoost;
 
@@ -276,10 +385,12 @@
 
     for(let i=0;i<total;i++){
       const a = start2 + step*i;
-      const wave = Math.sin(t/18 + i*0.7) * 2.2;
-      const x = VW/2 + Math.cos(a)*radius;
-      const y = yBase + Math.sin(a)*radius*0.55 + wave;
+      const wave = Math.sin(t/18 + i*0.7) * 1.8;
 
+      const x = VW/2 + Math.cos(a)*radius;
+      const y = yBase + Math.sin(a)*radius*0.50 + wave;
+
+      // shadow
       ctx.save();
       ctx.translate(x+2,y+2);
       ctx.rotate(a+Math.PI/2);
@@ -287,6 +398,7 @@
       ctx.fillText(chars[i],0,0);
       ctx.restore();
 
+      // pink
       ctx.save();
       ctx.translate(x,y);
       ctx.rotate(a+Math.PI/2);
@@ -297,27 +409,80 @@
     ctx.restore();
   }
 
-  // ===== Game sprites =====
+  // =========================
+  // Message bubble (middle of sky)
+  // =========================
+  function drawBubbleMiddleSky(){
+    const skyTop = 130;
+    const skyBottom = GROUND_Y - 22;
+    const midY = (skyTop + skyBottom) / 2;
+
+    const bw = VW - 56;
+    const bx = (VW - bw) / 2;
+
+    ctx.font="11px 'Press Start 2P'";
+    const lines = wrapLines(bubbleText, bw - 28);
+    const lineH = 16;
+    const bh = 20 + lines.length * lineH;
+    const by = midY - bh/2;
+
+    // rainbow sparkles around bubble
+    if(sparkleTimer>0){
+      sparkleTimer--;
+      const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"];
+      for(let i=0;i<30;i++){
+        const x = bx + Math.random()*bw;
+        const y = by + Math.random()*bh;
+        ctx.fillStyle = colors[(Math.random()*colors.length)|0];
+        ctx.fillRect(x + (Math.random()*14-7), y + (Math.random()*14-7), 2, 2);
+      }
+    }
+
+    ctx.fillStyle="rgba(40,40,90,.65)";
+    roundRect(bx,by,bw,bh,14,true);
+
+    ctx.strokeStyle="rgba(255,255,255,.20)";
+    ctx.lineWidth=2;
+    roundRect(bx,by,bw,bh,14,false);
+
+    ctx.fillStyle="#fff";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    let ty = by + 12 + lineH/2;
+    for(const ln of lines){
+      ctx.fillText(ln, VW/2, ty);
+      ty += lineH;
+    }
+  }
+
+  // =========================
+  // Game sprites (rat/cheese/flowers)
+  // =========================
   function drawCheese(x,y){
+    // bigger, more “cheese” look
     ctx.save();
     ctx.translate(x,y);
-    ctx.scale(1.3,1.3);
+    ctx.scale(1.35,1.35);
 
+    // wedge
     ctx.fillStyle="#ffd24a";
     ctx.beginPath();
     ctx.moveTo(0, 18);
-    ctx.lineTo(30, 10);
-    ctx.lineTo(30, 30);
+    ctx.lineTo(32, 8);
+    ctx.lineTo(32, 30);
     ctx.closePath();
     ctx.fill();
 
+    // holes
     ctx.fillStyle="#e7b93d";
-    ctx.fillRect(7, 20, 3, 3);
-    ctx.fillRect(14, 17, 3, 3);
-    ctx.fillRect(20, 22, 3, 3);
+    ctx.fillRect(8, 20, 3, 3);
+    ctx.fillRect(16, 16, 3, 3);
+    ctx.fillRect(22, 23, 3, 3);
+    ctx.fillRect(26, 15, 2, 2);
 
+    // side shade
     ctx.fillStyle="rgba(0,0,0,.15)";
-    ctx.fillRect(28, 12, 2, 18);
+    ctx.fillRect(30, 10, 2, 18);
 
     ctx.restore();
   }
@@ -325,21 +490,24 @@
   function drawFlower(x,y,petal){
     ctx.save();
     ctx.translate(x,y);
-    ctx.scale(1.2,1.2);
+    ctx.scale(1.25,1.25);
 
+    // stem + leaves
     ctx.fillStyle="#2fbf4b";
-    ctx.fillRect(12, 22, 4, 30);
-    ctx.fillRect(5,  34, 8, 4);
-    ctx.fillRect(15, 40, 10, 4);
+    ctx.fillRect(12, 24, 4, 32);
+    ctx.fillRect(6,  38, 10, 4);
+    ctx.fillRect(16, 44, 12, 4);
 
+    // petals (rounder feel)
     ctx.fillStyle=petal;
-    ctx.fillRect(6,  8,  16, 14);
-    ctx.fillRect(2,  12, 6,  8);
-    ctx.fillRect(22, 12, 6,  8);
-    ctx.fillRect(10, 4,  8,  6);
+    ctx.fillRect(6, 10, 16, 14);
+    ctx.fillRect(2, 14, 6,  10);
+    ctx.fillRect(22,14, 6,  10);
+    ctx.fillRect(10,6,  8,  8);
 
+    // center
     ctx.fillStyle="#ffd24a";
-    ctx.fillRect(12, 13, 4, 4);
+    ctx.fillRect(12, 16, 4, 4);
 
     ctx.restore();
   }
@@ -347,53 +515,70 @@
   function drawRat(x,y,dir){
     ctx.save();
     ctx.translate(x,y);
-    ctx.scale(dir*1.4, 1.4);
+    ctx.scale(dir*1.45, 1.45);
 
+    // body
     ctx.fillStyle="#b7b0b8";
-    ctx.fillRect(-10, -6, 20, 12);
+    ctx.fillRect(-10, -6, 22, 12);
 
+    // head
     ctx.fillStyle="#c3bcc4";
-    ctx.fillRect(8, -10, 14, 14);
+    ctx.fillRect(10, -10, 14, 14);
 
+    // ear
     ctx.fillStyle="#c3bcc4";
-    ctx.fillRect(18, -14, 6, 6);
+    ctx.fillRect(20, -14, 6, 6);
     ctx.fillStyle="#e7a7b8";
-    ctx.fillRect(20, -12, 2, 2);
+    ctx.fillRect(22, -12, 2, 2);
 
+    // bow
     ctx.fillStyle="#ff5aa5";
-    ctx.fillRect(14, -16, 4, 4);
-    ctx.fillRect(19, -16, 4, 4);
-    ctx.fillRect(18, -15, 1, 1);
+    ctx.fillRect(16, -16, 4, 4);
+    ctx.fillRect(21, -16, 4, 4);
+    ctx.fillRect(20, -15, 1, 1);
 
+    // eye + nose
     ctx.fillStyle="#000";
-    ctx.fillRect(14, -5, 2, 2);
-    ctx.fillRect(22, -2, 2, 2);
+    ctx.fillRect(16, -5, 2, 2);
+    ctx.fillRect(24, -2, 2, 2);
 
+    // tail
     ctx.fillStyle="#caa1aa";
     ctx.fillRect(-18, -2, 8, 2);
 
+    // feet
     ctx.fillStyle="#8e8790";
     ctx.fillRect(-6, 6, 6, 3);
-    ctx.fillRect(4,  6, 6, 3);
+    ctx.fillRect(5,  6, 6, 3);
 
     ctx.restore();
   }
 
-  // ===== Game state =====
-  const flowers = [];
+  // =========================
+  // Game state
+  // =========================
+  const plantedFlowers = [];
   let cheese = null;
 
-  const rat = { x: 70, y: GROUND_Y + 210, dir: 1, speed: 3.0, target: null, busy:false };
+  const rat = {
+    x: 70,
+    y: GROUND_Y + 220,
+    dir: 1,
+    speed: 3.0,
+    target: null,
+    busy:false
+  };
 
   function dropCheese(gx,gy){
-    gx = clamp(gx, 20, VW-20);
-    gy = clamp(gy, 120, VH-90);
+    // allow tap anywhere, but keep targets in the “play area”
+    gx = clamp(gx, 22, VW-22);
+    gy = clamp(gy, 120, VH-120);
 
-    cheese = { x: gx-12, y: gy-16 };
+    cheese = { x: gx-14, y: gy-18 };
     rat.target = { x: cheese.x, y: cheese.y };
     rat.busy = true;
 
-    showBubble("Nom Nom 🧀");
+    showBubble("Cheese spotted! 🧀");
     chime();
   }
 
@@ -404,10 +589,14 @@
     const d = Math.hypot(dx,dy);
     rat.dir = dx >= 0 ? 1 : -1;
 
-    if(d < 7){
+    if(d < 8){
       if(cheese){
         const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ff7aa5"];
-        flowers.push({ x: cheese.x - 10, y: cheese.y - 64, c: colors[(Math.random()*colors.length)|0] });
+        plantedFlowers.push({
+          x: cheese.x - 10,
+          y: cheese.y - 72,
+          c: colors[(Math.random()*colors.length)|0]
+        });
         cheese = null;
 
         showBubble(messages[msgIndex % messages.length]);
@@ -421,10 +610,14 @@
 
     rat.x += (dx/d) * rat.speed;
     rat.y += (dy/d) * rat.speed;
+
     rat.x = clamp(rat.x, 22, VW-22);
-    rat.y = clamp(rat.y, GROUND_Y+60, VH-90);
+    rat.y = clamp(rat.y, GROUND_Y+40, VH-130);
   }
 
+  // =========================
+  // Input
+  // =========================
   canvas.addEventListener("pointerdown",(e)=>{
     safeResumeAudio();
     tryPlaySofia();
@@ -432,76 +625,56 @@
     dropCheese(p.x, p.y);
   });
 
-  // ===== Render loop =====
+  // =========================
+  // Render loop
+  // =========================
   let t = 0;
   function draw(){
     t++;
 
-    // background behind game = sky color (no ugly black bars)
-    ctx.fillStyle="#79b7ff";
+    // outside area
+    ctx.fillStyle="#000";
     ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
 
+    // game frame
     ctx.save();
     ctx.translate(offX, offY);
     ctx.scale(scale, scale);
 
-    const sky = ctx.createLinearGradient(0,0,0,VH);
-    sky.addColorStop(0,"#79b7ff");
-    sky.addColorStop(1,"#bfe6ff");
-    ctx.fillStyle = sky;
-    ctx.fillRect(0,0,VW,VH);
+    // sky + rainbow + clouds
+    drawSky(t);
 
-    drawRainbow();
+    // hills + meadow
+    drawHills(t);
+    drawMeadow();
 
-    // clouds
-    const s1 = (t*0.40) % (VW+220);
-    const s2 = (t*0.55) % (VW+240);
-    const s3 = (t*0.70) % (VW+260);
-    const s4 = (t*0.90) % (VW+280);
-    drawCloud(-80 + s1*0.70, 46, 0.85);
-    drawCloud( 20 + s2*0.60, 74, 1.00);
-    drawCloud(-130+ s3*0.55, 104, 1.05);
-    drawCloud( 60 + s4*0.45, 128, 0.78);
+    // title (arc, spaced, stays in frame)
+    drawArcLine("Happy Valentine’s Day", t, 72, 108, 13, 1.10);
+    drawArcLine("My bby",               t, 102, 86,  13, 1.18);
 
-    // ground
-    ctx.fillStyle="#155f28";
-    ctx.fillRect(0,GROUND_Y,VW,VH-GROUND_Y);
-    ctx.fillStyle="rgba(0,0,0,.12)";
-    for(let y=GROUND_Y; y<VH; y+=18) ctx.fillRect(0,y,VW,3);
-
-    // sparkles
-    for(let i=0;i<60;i++){
-      const x = (Math.random()*VW)|0;
-      const y = (GROUND_Y+20 + Math.random()*(VH-GROUND_Y-80))|0;
-      const c = ["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff"][i%5];
-      ctx.fillStyle=c;
-      ctx.fillRect(x,y,2,2);
-    }
-
-    // title
-    drawArcLine("Happy Valentine’s Day", t, 74, 105, 13);
-    drawArcLine("My bby 💗",            t, 102, 85, 13);
-
-    // bubble
+    // bubble (middle sky)
     if(bubbleTimer>0) bubbleTimer--;
     drawBubbleMiddleSky();
 
-    // objects
-    flowers.forEach(f => drawFlower(f.x, f.y, f.c));
+    // planted flowers from cheese-eating
+    for(const f of plantedFlowers) drawFlower(f.x, f.y, f.c);
+
+    // cheese
     if(cheese) drawCheese(cheese.x, cheese.y);
 
+    // rat
     updateRat();
     drawRat(Math.round(rat.x), Math.round(rat.y), rat.dir);
 
-    // bottom signature (taller + always visible)
-    ctx.fillStyle="rgba(0,0,0,.28)";
-    ctx.fillRect(0, VH-76, VW, 76);
+    // footer (lifted so iPhone browser never cuts it)
+    ctx.fillStyle="rgba(0,0,0,.32)";
+    roundRect(16, FOOTER_Y, VW-32, FOOTER_H, 14, true);
 
     ctx.fillStyle="#fff";
-    ctx.font="13px 'Press Start 2P'";
+    ctx.font="11px 'Press Start 2P'";
     ctx.textAlign="center";
     ctx.textBaseline="middle";
-    ctx.fillText(sigText, VW/2, VH-38);
+    ctx.fillText(sigText, VW/2, FOOTER_Y + FOOTER_H/2);
 
     ctx.restore();
     requestAnimationFrame(draw);
