@@ -90,25 +90,18 @@
     <canvas id="c"></canvas>
 
     <!-- Optional: if you upload song.mp3 into the repo, it will play -->
-    <audio id="bgm" loop>
-      <source src="song.mp3" type="audio/mpeg">
-    </audio>
-
-    <div class="ui">
-      <div class="title">Happy Valentine’s Day<br/>My bby 💗</div>
-
-      <div class="sig">
-        <span style="font-size:16px;">❤️</span>
-        <span>I love you, Dimi.</span>
-      </div>
-
-      <div class="chip">
-        <button id="muteBtn">Mute</button>
-      </div>
-    </div>
-  </div>
+    <audio id="bg-music" loop>
+  <source src="AUD-20210820-WA0076.mp3" type="audio/mpeg">
+</audio>
 
 <script>
+  const music = document.getElementById("bg-music");
+
+  document.addEventListener("click", function () {
+    music.play();
+  }, { once: true });
+</script>
+
 (() => {
   const canvas = document.getElementById("c");
   const ctx = canvas.getContext("2d");
