@@ -136,6 +136,9 @@
   "I adore everything about you.",
   "Forever and always, my bby 💗"
 ];
+  
+showBubble(messages[msgIndex % messages.length]);
+msgIndex++;
 
   let msgIndex = 0;
   let bubbleText = "Tap grass to feed your rat ";
@@ -160,19 +163,64 @@
     fill ? ctx.fill() : ctx.stroke();
   }
 
-  function drawBubbleCentered(){
-    const bx = 18, bw = VW-36, by = 140, bh = 62;
+  function wrapLines(text, maxWidth){
+  const words = text.split(" ");
+  const lines = [];
+  let line = "";
+  for(const w of words){
+    const test = line ? (line + " " + w) : w;
+    if(ctx.measureText(test).width <= maxWidth) line = test;
+    else { if(line) lines.push(line); line = w; }
+  }
+  if(line) lines.push(line);
+  return lines.slice(0, 3); // max 3 lines
+}
 
-    if(sparkleTimer>0){
-      sparkleTimer--;
-      const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"];
-      for(let i=0;i<28;i++){
-        const x = bx + Math.random()*bw;
-        const y = by + Math.random()*bh;
-        ctx.fillStyle = colors[(Math.random()*colors.length)|0];
-        ctx.fillRect(x + (Math.random()*18-9), y + (Math.random()*18-9), 2, 2);
-      }
+function drawBubbleCentered(){
+  // ✅ Middle of the sky = between title area and ground
+  const skyTop = 120;          // below title
+  const skyBottom = GROUND_Y - 20;
+  const midY = (skyTop + skyBottom) / 2;
+
+  const bw = VW - 60;          // safe width
+  const bx = (VW - bw) / 2;
+  const maxTextW = bw - 30;
+
+  ctx.font="11px 'Press Start 2P'";
+  const lines = wrapLines(bubbleText, maxTextW);
+  const lineH = 16;
+  const bh = 22 + lines.length * lineH;
+  const by = midY - bh/2;
+
+  // rainbow sparkles around bubble
+  if(sparkleTimer>0){
+    sparkleTimer--;
+    const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"];
+    for(let i=0;i<26;i++){
+      const x = bx + Math.random()*bw;
+      const y = by + Math.random()*bh;
+      ctx.fillStyle = colors[(Math.random()*colors.length)|0];
+      ctx.fillRect(x + (Math.random()*14-7), y + (Math.random()*14-7), 2, 2);
     }
+  }
+
+  ctx.fillStyle="rgba(27,21,48,.58)";
+  roundRect(bx, by, bw, bh, 14, true);
+
+  ctx.strokeStyle="rgba(255,255,255,.20)";
+  ctx.lineWidth=2;
+  roundRect(bx, by, bw, bh, 14, false);
+
+  ctx.fillStyle="#fff";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+
+  let ty = by + 14 + lineH/2;
+  for(const ln of lines){
+    ctx.fillText(ln, VW/2, ty);
+    ty += lineH;
+  }
+}
 
     ctx.fillStyle="rgba(27,21,48,.58)";
     roundRect(bx,by,bw,bh,14,true);
@@ -204,6 +252,15 @@
       const wave = Math.sin(t/18 + i*0.7) * 2.2;
       const x = VW/2 + Math.cos(a)*radius;
       const y = yBase + Math.sin(a)*radius*0.55 + wave;
+      
+ctx.fillStyle="rgba(0,0,0,.25)";
+ctx.fillRect(0, VH-48, VW, 48);
+
+ctx.fillStyle="#fff";
+ctx.font="14px 'Press Start 2P'";
+ctx.textAlign="center";
+ctx.textBaseline="middle";
+ctx.fillText("I love you, Dimi ", VW/2, VH-24);
 
       ctx.save();
       ctx.translate(x+2,y+2);
