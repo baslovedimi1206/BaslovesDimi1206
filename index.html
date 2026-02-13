@@ -373,36 +373,34 @@
   const chars = text.split("");
   const total = chars.length;
 
-  // wider arc range
-  const start = Math.PI*1.20;
-  const end   = Math.PI*1.80;
+  // Wider arc range (more space horizontally)
+  const start = Math.PI * 1.10;
+  const end   = Math.PI * 1.90;
 
-  // bigger spacing
-  const stepBase = (end-start) / Math.max(1,total-1);
-  const step = stepBase * spacingBoost;
+  // More spacing between letters
+  const step = ((end - start) / Math.max(1,total-1)) * spacingBoost;
 
-  // recenter widened span so it stays inside frame
+  // Recenter widened span
   const span = step * (total-1);
   const start2 = (start + end - span) / 2;
 
   for(let i=0;i<total;i++){
     const a = start2 + step*i;
 
-    // soft wave motion
-    const wave = Math.sin(t/18 + i*0.6) * 2.2;
+    const wave = Math.sin(t/18 + i*0.5) * 2.5;
 
     const x = VW/2 + Math.cos(a)*radius;
-    const y = yBase + Math.sin(a)*radius*0.48 + wave;
+    const y = yBase + Math.sin(a)*radius*0.42 + wave;
 
-    // glow effect
     ctx.save();
     ctx.translate(x,y);
     ctx.rotate(a+Math.PI/2);
 
-    ctx.shadowColor = "#ff7acb";
-    ctx.shadowBlur = 12;
+    // Glow
+    ctx.shadowColor = "#ff66c4";
+    ctx.shadowBlur = 10;
 
-    ctx.fillStyle="#ff66c4";   // brighter pink
+    ctx.fillStyle="#ff4fa3";
     ctx.fillText(chars[i],0,0);
 
     ctx.shadowBlur = 0;
@@ -411,6 +409,7 @@
 
   ctx.restore();
 }
+
 
 
   // =========================
