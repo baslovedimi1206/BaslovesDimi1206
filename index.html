@@ -1,269 +1,444 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Happy Valentine 💗</title>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>Happy Valentine’s Day 💗</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    html,body{margin:0;height:100%;background:#000;overflow:hidden}
+    body{font-family:"Press Start 2P",system-ui}
+    .wrap{position:relative;width:100vw;height:100vh}
+    canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 
-<style>
-html,body{margin:0;height:100%;background:#000;font-family:"Press Start 2P"}
-.wrap{position:relative;width:100vw;height:100vh;overflow:hidden}
-canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
-.chip{
-position:absolute;
-right:16px;
-bottom:80px;
-background:rgba(0,0,0,.35);
-padding:12px;
-border-radius:14px;
-}
-button{
-font-family:"Press Start 2P";
-font-size:10px;
-background:#fff2fb;
-border:2px solid #000;
-border-radius:10px;
-padding:10px;
-cursor:pointer;
-}
-.sig{
-position:absolute;
-left:50%;
-transform:translateX(-50%);
-bottom:20px;
-color:#fff;
-font-size:12px;
-text-shadow:2px 2px 0 #000;
-}
-</style>
+    /* UI overlay (only button) */
+    .btn{
+      position:absolute;
+      right:14px;
+      bottom:76px; /* above bottom text */
+      background:rgba(0,0,0,.35);
+      border:2px solid rgba(255,255,255,.18);
+      border-radius:14px;
+      padding:10px;
+      backdrop-filter: blur(6px);
+    }
+    button{
+      font-family:"Press Start 2P";
+      font-size:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:2px solid #000;
+      background:#fff2fb;
+      color:#000;
+      box-shadow:2px 2px 0 #000;
+      cursor:pointer;
+    }
+    button:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #000}
+  </style>
 </head>
-
 <body>
 <div class="wrap">
-<canvas id="c"></canvas>
+  <canvas id="c"></canvas>
 
-<div class="chip">
-<button id="muteBtn">Mute</button>
+  <div class="btn">
+    <button id="muteBtn">Mute</button>
+  </div>
+
+  <!-- ONLY Sofia mp3 -->
+  <audio id="bgm" loop preload="auto">
+    <source src="AUD-20210820-WA0076.mp3" type="audio/mpeg">
+  </audio>
 </div>
-
-<div class="sig">I love you, Dimi 💐</div>
-
-<audio id="bgm" loop>
-<source src="AUD-20210820-WA0076.mp3" type="audio/mpeg">
-</audio>
 
 <script>
-(()=>{
+(() => {
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
 
-const canvas=document.getElementById("c");
-const ctx=canvas.getContext("2d");
-ctx.imageSmoothingEnabled=false;
+  // ===== Virtual game resolution (always fits) =====
+  const VW = 360, VH = 640;           // game “screen”
+  let scale = 1, offX = 0, offY = 0;  // letterbox
+  function resize(){
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(dpr, dpr);
 
-function resize(){
-const dpr=window.devicePixelRatio||1;
-canvas.width=window.innerWidth*dpr;
-canvas.height=window.innerHeight*dpr;
-ctx.setTransform(1,0,0,1,0,0);
-ctx.scale(dpr,dpr);
-}
-window.addEventListener("resize",resize);
-resize();
+    scale = Math.min(window.innerWidth / VW, window.innerHeight / VH);
+    offX = (window.innerWidth  - VW * scale) / 2;
+    offY = (window.innerHeight - VH * scale) / 2;
+  }
+  window.addEventListener("resize", resize);
+  resize();
 
-const bgm=document.getElementById("bgm");
-let muted=false;
+  function toGameCoords(clientX, clientY){
+    const rect = canvas.getBoundingClientRect();
+    const sx = (clientX - rect.left - offX) / scale;
+    const sy = (clientY - rect.top  - offY) / scale;
+    return { x: sx, y: sy };
+  }
 
-const AC=new (window.AudioContext||window.webkitAudioContext)();
-function chime(){
-if(muted)return;
-const now=AC.currentTime;
-const o=AC.createOscillator();
-const g=AC.createGain();
-o.type="triangle";
-o.frequency.setValueAtTime(700,now);
-o.frequency.exponentialRampToValueAtTime(1100,now+.1);
-g.gain.setValueAtTime(.0001,now);
-g.gain.exponentialRampToValueAtTime(.15,now+.02);
-g.gain.exponentialRampToValueAtTime(.0001,now+.18);
-o.connect(g).connect(AC.destination);
-o.start();o.stop(now+.2);
-}
+  // ===== Audio =====
+  const bgm = document.getElementById("bgm");
+  let muted = false;
+  const AC = new (window.AudioContext||window.webkitAudioContext)();
 
-document.getElementById("muteBtn").onclick=()=>{
-muted=!muted;
-bgm.muted=muted;
-document.getElementById("muteBtn").textContent=muted?"Unmute":"Mute";
-};
+  function safeResumeAudio(){ if(AC.state==="suspended") AC.resume(); }
 
-async function tryPlay(){
-try{await bgm.play();}catch(e){}
-}
+  function chime(){
+    if(muted) return;
+    const now = AC.currentTime;
+    const o = AC.createOscillator();
+    const g = AC.createGain();
+    o.type="triangle";
+    o.frequency.setValueAtTime(760, now);
+    o.frequency.exponentialRampToValueAtTime(1120, now+0.09);
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.12, now+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, now+0.16);
+    o.connect(g).connect(AC.destination);
+    o.start(now); o.stop(now+0.18);
+  }
 
-const messages=[
-"I'm so proud of you.",
-"You are my sunshine.",
-"You are the best girlfriend.",
-"You make my days brighter.",
-"You are so strong.",
-"You are so kind.",
-"You inspire me.",
-"I love your smile.",
-"You mean everything to me."
-];
-let msgIndex=0;
-let skyText="Tap anywhere to drop cheese 🧀";
-let skyTimer=200;
-let sparkleTimer=0;
+  async function tryPlaySofia(){
+    try { bgm.muted = muted; await bgm.play(); } catch(e) {}
+  }
 
-function showMsg(t){
-skyText=t;
-skyTimer=260;
-sparkleTimer=70;
-}
+  document.getElementById("muteBtn").onclick = () => {
+    muted = !muted;
+    bgm.muted = muted;
+    document.getElementById("muteBtn").textContent = muted ? "Unmute" : "Mute";
+    chime();
+  };
 
-function ir(a,b){return Math.floor(Math.random()*(b-a+1))+a}
-function horizon(H){return H*.4}
+  // ===== Game layout =====
+  const SAFE_TOP = 16;
+  const HUD_H = 150;          // top HUD zone
+  const GROUND_Y = 270;       // horizon line
+  const SAFE_BOTTOM = 56;     // bottom text line zone
+  const sigText = "I love you, Dimi 💐";
 
-function flower(x,y,color){
-ctx.fillStyle="#2fbf4b";
-ctx.fillRect(x+10,y+25,4,28);
-ctx.fillStyle=color;
-ctx.fillRect(x+5,y+10,20,14);
-ctx.fillStyle="#ffd24a";
-ctx.fillRect(x+13,y+15,4,4);
-}
+  // ===== Messages =====
+  const messages = [
+    "I'm so proud of you.",
+    "You are my sunshine.",
+    "You are the best girlfriend.",
+    "You make my days brighter.",
+    "I believe in you always.",
+    "You are so strong.",
+    "You are so kind.",
+    "You inspire me every day.",
+    "I love your smile so much.",
+    "I choose you, again and again."
+  ];
+  let msgIndex = 0;
+  let bubbleText = "Tap anywhere to drop cheese 🧀";
+  let bubbleTimer = 220;
+  let sparkleTimer = 0;
 
-function cheese(x,y){
-ctx.fillStyle="#ffdb58";
-ctx.beginPath();
-ctx.moveTo(x,y);
-ctx.lineTo(x+24,y+6);
-ctx.lineTo(x,y+18);
-ctx.closePath();
-ctx.fill();
-ctx.fillStyle="#e5b83d";
-ctx.fillRect(x+6,y+6,3,3);
-ctx.fillRect(x+12,y+8,3,3);
-ctx.fillRect(x+7,y+12,3,3);
-}
+  function showBubble(t){
+    bubbleText = t;
+    bubbleTimer = 260;
+    sparkleTimer = 80;
+  }
 
-function rat(x,y){
-ctx.fillStyle="#bbb";
-ctx.fillRect(x,y,18,10);
-ctx.fillRect(x+10,y-6,12,12);
-ctx.fillStyle="#ff5aa5";
-ctx.fillRect(x+16,y-8,4,4);
-ctx.fillStyle="#000";
-ctx.fillRect(x+18,y-2,2,2);
-}
+  // ===== Sprites =====
+  function drawCloud(x,y){
+    ctx.fillStyle="#fff";
+    ctx.fillRect(x+6,y,24,12);
+    ctx.fillRect(x,y+6,36,14);
+    ctx.fillRect(x+10,y+16,22,10);
+  }
 
-function drawArcTitle(text,W){
-ctx.save();
-ctx.font="16px 'Press Start 2P'";
-ctx.textAlign="center";
-ctx.textBaseline="middle";
+  function drawCheese(x,y){
+    // wedge cheese, more “game-like”
+    ctx.fillStyle="#ffd24a";
+    ctx.beginPath();
+    ctx.moveTo(x, y+18);
+    ctx.lineTo(x+26, y+10);
+    ctx.lineTo(x+26, y+26);
+    ctx.closePath();
+    ctx.fill();
 
-const chars=text.split("");
-const total=chars.length;
-const radius=Math.min(220,W*.45);
-const start=Math.PI*1.1;
-const end=Math.PI*1.9;
-const step=(end-start)/(total-1);
+    ctx.fillStyle="#e7b93d";
+    ctx.fillRect(x+6, y+18, 3, 3);
+    ctx.fillRect(x+12, y+16, 3, 3);
+    ctx.fillRect(x+17, y+20, 3, 3);
 
-for(let i=0;i<total;i++){
-const wave=Math.sin(Date.now()/400+i*.5)*4;
-const a=start+step*i;
-const x=W/2+Math.cos(a)*radius;
-const y=70+Math.sin(a)*radius/1.8+wave;
-ctx.save();
-ctx.translate(x,y);
-ctx.rotate(a+Math.PI/2);
-ctx.fillStyle="#ff4fa3";
-ctx.fillText(chars[i],0,0);
-ctx.restore();
-}
-ctx.restore();
-}
+    ctx.fillStyle="rgba(0,0,0,.15)";
+    ctx.fillRect(x+24, y+12, 2, 14);
+  }
 
-let flowers=[];
-let cheeseObj=null;
-let ratX=80;
-let ratY=0;
-let target=null;
+  function drawFlower(x,y,petal){
+    // stem + petals + center
+    ctx.fillStyle="#2fbf4b";
+    ctx.fillRect(x+12, y+22, 4, 30);
+    ctx.fillRect(x+5,  y+34, 8, 4);
+    ctx.fillRect(x+15, y+40, 10, 4);
 
-function dropCheese(x,y){
-if(y<horizon(window.innerHeight))return;
-cheeseObj={x:x-10,y:y-10};
-target={x:cheeseObj.x,y:cheeseObj.y};
-showMsg("Cheese spotted! 🧀");
-chime();
-}
+    ctx.fillStyle=petal;
+    // petals
+    ctx.fillRect(x+6,  y+8,  16, 14);
+    ctx.fillRect(x+2,  y+12, 6,  8);
+    ctx.fillRect(x+22, y+12, 6,  8);
+    ctx.fillRect(x+10, y+4,  8,  6);
 
-canvas.addEventListener("pointerdown",(e)=>{
-tryPlay();
-chime();
-const rect=canvas.getBoundingClientRect();
-dropCheese(e.clientX-rect.left,e.clientY-rect.top);
-});
+    // center
+    ctx.fillStyle="#ffd24a";
+    ctx.fillRect(x+12, y+13, 4, 4);
+  }
 
-function update(){
-if(target){
-const dx=target.x-ratX;
-const dy=target.y-ratY;
-const d=Math.hypot(dx,dy);
-if(d<3){
-flowers.push({x:cheeseObj.x-6,y:cheeseObj.y-40,color:["#ff5aa5","#ffd24a","#7fd6ff"][ir(0,2)]});
-cheeseObj=null;
-target=null;
-showMsg(messages[msgIndex%messages.length]);
-msgIndex++;
-}else{
-ratX+=dx*.02;
-ratY+=dy*.02;
-}
-}
-}
+  function drawRat(x,y,dir){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.scale(dir,1);
 
-function draw(){
-const W=window.innerWidth;
-const H=window.innerHeight;
-const h=horizon(H);
+    // body
+    ctx.fillStyle="#b7b0b8";
+    ctx.fillRect(-10, -6, 20, 12);
 
-const g=ctx.createLinearGradient(0,0,0,H);
-g.addColorStop(0,"#79b7ff");
-g.addColorStop(1,"#bfe6ff");
-ctx.fillStyle=g;
-ctx.fillRect(0,0,W,H);
+    // head
+    ctx.fillStyle="#c3bcc4";
+    ctx.fillRect(8, -10, 14, 14);
 
-ctx.fillStyle="#fff";
-ctx.fillRect(40+Math.sin(Date.now()/800)*20,80,40,20);
+    // ear
+    ctx.fillStyle="#c3bcc4";
+    ctx.fillRect(18, -14, 6, 6);
+    ctx.fillStyle="#e7a7b8";
+    ctx.fillRect(20, -12, 2, 2);
 
-ctx.fillStyle="#155f28";
-ctx.fillRect(0,h,W,H-h);
+    // bow
+    ctx.fillStyle="#ff5aa5";
+    ctx.fillRect(14, -16, 4, 4);
+    ctx.fillRect(19, -16, 4, 4);
+    ctx.fillRect(18, -15, 1, 1);
 
-flowers.forEach(f=>flower(f.x,f.y,f.color));
-if(cheeseObj)cheese(cheeseObj.x,cheeseObj.y);
-rat(ratX,ratY);
+    // eye + nose
+    ctx.fillStyle="#000";
+    ctx.fillRect(14, -5, 2, 2);
+    ctx.fillRect(22, -2, 2, 2);
 
-drawArcTitle("Happy Valentine’s Day My bby 💗",W);
+    // tail
+    ctx.fillStyle="#caa1aa";
+    ctx.fillRect(-18, -2, 8, 2);
 
-if(skyTimer>0)skyTimer--;
+    // feet
+    ctx.fillStyle="#8e8790";
+    ctx.fillRect(-6, 6, 6, 3);
+    ctx.fillRect(4,  6, 6, 3);
 
-ctx.font="14px 'Press Start 2P'";
-ctx.textAlign="center";
-ctx.fillStyle="rgba(27,21,48,.6)";
-ctx.fillRect(W/2-250,110,500,60);
-ctx.fillStyle="#fff";
-ctx.fillText(skyText,W/2,140);
+    ctx.restore();
+  }
 
-update();
-requestAnimationFrame(draw);
-}
+  function roundRect(x,y,w,h,r,fill){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+    fill ? ctx.fill() : ctx.stroke();
+  }
 
-draw();
+  function drawBubbleCentered(){
+    // centered bubble in sky area
+    const bx = 20;
+    const bw = VW - 40;
+    const by = 120;
+    const bh = 62;
 
+    // rainbow sparkles
+    if(sparkleTimer>0){
+      sparkleTimer--;
+      const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"];
+      for(let i=0;i<22;i++){
+        const x = bx + (Math.random()*bw);
+        const y = by + (Math.random()*bh);
+        ctx.fillStyle = colors[(Math.random()*colors.length)|0];
+        ctx.fillRect(x + (Math.random()*18-9), y + (Math.random()*18-9), 2, 2);
+      }
+    }
+
+    ctx.fillStyle="rgba(27,21,48,.58)";
+    roundRect(bx,by,bw,bh,14,true);
+
+    ctx.strokeStyle="rgba(255,255,255,.2)";
+    ctx.lineWidth=2;
+    roundRect(bx,by,bw,bh,14,false);
+
+    ctx.fillStyle="#fff";
+    ctx.font="14px 'Press Start 2P'";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText(bubbleText, VW/2, by + bh/2);
+  }
+
+  // Arc title (half-circle) + waving
+  function drawArcTitle(text, t){
+    ctx.save();
+    ctx.font="16px 'Press Start 2P'";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+
+    const chars = text.split("");
+    const total = chars.length;
+    const radius = 170;                 // keeps it on screen
+    const start = Math.PI*1.12;
+    const end   = Math.PI*1.88;
+    const step  = (end-start) / Math.max(1,total-1);
+
+    for(let i=0;i<total;i++){
+      const a = start + step*i;
+      const wave = Math.sin(t/18 + i*0.6) * 3;
+      const x = VW/2 + Math.cos(a)*radius;
+      const y = 70 + Math.sin(a)*radius*0.55 + wave;
+
+      // shadow
+      ctx.save();
+      ctx.translate(x+2,y+2);
+      ctx.rotate(a+Math.PI/2);
+      ctx.fillStyle="#000";
+      ctx.fillText(chars[i],0,0);
+      ctx.restore();
+
+      // text
+      ctx.save();
+      ctx.translate(x,y);
+      ctx.rotate(a+Math.PI/2);
+      ctx.fillStyle="#ff4fa3";
+      ctx.fillText(chars[i],0,0);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  // ===== Game state =====
+  const flowers = [];
+  let cheese = null;
+
+  const rat = { x: 70, y: 520, dir: 1, speed: 2.8, target: null, busy:false };
+
+  function dropCheese(gx,gy){
+    if(gy < GROUND_Y+20) return; // only on grass
+    cheese = { x: gx-10, y: gy-14 };
+    rat.target = { x: cheese.x, y: cheese.y };
+    rat.busy = true;
+    showBubble("Cheese spotted! 🧀");
+    chime();
+  }
+
+  function updateRat(){
+    if(!rat.busy || !rat.target) return;
+    const dx = rat.target.x - rat.x;
+    const dy = rat.target.y - rat.y;
+    const d = Math.hypot(dx,dy);
+    rat.dir = dx >= 0 ? 1 : -1;
+
+    if(d < 6){
+      // “eat” cheese -> spawn flower
+      if(cheese){
+        const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ff7aa5"];
+        flowers.push({
+          x: cheese.x - 6,
+          y: cheese.y - 54,
+          c: colors[(Math.random()*colors.length)|0]
+        });
+        cheese = null;
+
+        showBubble(messages[msgIndex % messages.length]);
+        msgIndex++;
+        chime();
+      }
+      rat.busy = false;
+      rat.target = null;
+      return;
+    }
+
+    rat.x += (dx/d) * rat.speed;
+    rat.y += (dy/d) * rat.speed;
+    rat.x = Math.max(16, Math.min(VW-16, rat.x));
+    rat.y = Math.max(GROUND_Y+30, Math.min(VH-70, rat.y));
+  }
+
+  // ===== Input =====
+  canvas.addEventListener("pointerdown",(e)=>{
+    safeResumeAudio();
+    tryPlaySofia(); // only Sofia
+    const p = toGameCoords(e.clientX, e.clientY);
+    dropCheese(p.x, p.y);
+  });
+
+  // ===== Render loop =====
+  let t = 0;
+  function draw(){
+    t++;
+
+    // letterbox background
+    ctx.fillStyle="#000";
+    ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
+
+    // draw “game screen”
+    ctx.save();
+    ctx.translate(offX, offY);
+    ctx.scale(scale, scale);
+
+    // sky
+    const sky = ctx.createLinearGradient(0,0,0,VH);
+    sky.addColorStop(0,"#79b7ff");
+    sky.addColorStop(1,"#bfe6ff");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0,0,VW,VH);
+
+    // moving clouds
+    const cloudShift = (t*0.6) % (VW+120);
+    drawCloud(40 + (cloudShift*0.6), 70);
+    drawCloud(-80 + (cloudShift*0.9), 105);
+
+    // ground
+    ctx.fillStyle="#155f28";
+    ctx.fillRect(0,GROUND_Y,VW,VH-GROUND_Y);
+    ctx.fillStyle="rgba(0,0,0,.12)";
+    for(let y=GROUND_Y; y<VH; y+=18) ctx.fillRect(0,y,VW,3);
+
+    // confetti sparkles on grass
+    for(let i=0;i<70;i++){
+      const x = (Math.random()*VW)|0;
+      const y = (GROUND_Y+20 + Math.random()*(VH-GROUND_Y-80))|0;
+      const c = ["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff"][i%5];
+      ctx.fillStyle=c;
+      ctx.fillRect(x,y,2,2);
+    }
+
+    // HUD
+    drawArcTitle("Happy Valentine’s Day My bby 💗", t);
+    if(bubbleTimer>0) bubbleTimer--;
+    drawBubbleCentered();
+
+    // objects
+    flowers.forEach(f => drawFlower(f.x, f.y, f.c));
+    if(cheese) drawCheese(cheese.x, cheese.y);
+
+    updateRat();
+    drawRat(Math.round(rat.x), Math.round(rat.y), rat.dir);
+
+    // bottom signature inside game frame (center)
+    ctx.fillStyle="rgba(0,0,0,.25)";
+    ctx.fillRect(0, VH-48, VW, 48);
+
+    ctx.fillStyle="#fff";
+    ctx.font="14px 'Press Start 2P'";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText(sigText, VW/2, VH-24);
+
+    ctx.restore();
+    requestAnimationFrame(draw);
+  }
+  draw();
 })();
 </script>
-</div>
 </body>
 </html>
