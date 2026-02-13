@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
@@ -7,32 +7,106 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     html,body{height:100%;margin:0;background:#0b0b16}
-    body{font-family:"Press Start 2P",system-ui;height:100dvh;overflow:hidden}
-    .wrap{position:relative;width:100vw;height:100dvh;background:#000;overflow:hidden}
-    canvas{width:100%;height:100%;image-rendering:pixelated;display:block}
+    body{
+      font-family:"Press Start 2P",system-ui;
+      height:100dvh;
+      overflow:hidden;
+      background:#0b0b16;
+    }
+    .wrap{
+      position:relative;
+      width:100vw;
+      height:100dvh;
+      overflow:hidden;
+      background:#000;
+    }
+    canvas{
+      width:100%;
+      height:100%;
+      display:block;
+      image-rendering:pixelated;
+    }
+
     .ui{position:absolute;inset:0;pointer-events:none}
-    .title{position:absolute;top:18px;left:50%;transform:translateX(-50%);
-      font-size:16px;color:#ff4fa3;text-shadow:2px 2px 0 #000;white-space:nowrap}
-    .sig{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);
-      display:flex;gap:10px;align-items:center;font-size:12px;color:#fff;text-shadow:2px 2px 0 #000}
-    .chip{pointer-events:auto;position:absolute;right:16px;bottom:16px;
-      padding:10px 12px;border-radius:14px;border:2px solid rgba(255,255,255,.2);
-      background:rgba(0,0,0,.35)}
-    button{pointer-events:auto;font-family:"Press Start 2P";font-size:10px;border:2px solid #000;
-      background:#fff2fb;color:#000;padding:10px;border-radius:12px;cursor:pointer;box-shadow:2px 2px 0 #000}
+
+    /* Title that fits iPhone */
+    .title{
+      position:absolute;
+      top:14px;
+      left:50%;
+      transform:translateX(-50%);
+      width:92vw;
+      text-align:center;
+      font-size:12px;
+      line-height:1.55;
+      color:#ff4fa3;
+      text-shadow:2px 2px 0 #000;
+      white-space:normal;
+    }
+
+    .chip{
+      pointer-events:auto;
+      position:absolute;
+      right:14px;
+      bottom:14px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:2px solid rgba(255,255,255,.2);
+      background:rgba(0,0,0,.35);
+      backdrop-filter: blur(6px);
+    }
+    button{
+      pointer-events:auto;
+      font-family:"Press Start 2P";
+      font-size:10px;
+      border:2px solid #000;
+      background:#fff2fb;
+      color:#000;
+      padding:10px 10px;
+      border-radius:12px;
+      cursor:pointer;
+      box-shadow:2px 2px 0 #000;
+    }
     button:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #000}
+
+    .sig{
+      position:absolute;
+      left:50%;
+      bottom:22px;
+      transform:translateX(-50%);
+      display:flex;
+      gap:10px;
+      align-items:center;
+      font-size:12px;
+      color:#fff;
+      text-shadow:2px 2px 0 #000;
+      white-space:nowrap;
+    }
   </style>
 </head>
-<body>
-<div class="wrap">
-  <canvas id="c"></canvas>
 
-  <div class="ui">
-    <div class="title">Happy Valentine’s Day My bby</div>
-    <div class="sig"><span style="font-size:16px;">❤️</span><span>Love, Bas</span></div>
-    <div class="chip"><button id="muteBtn">Mute</button></div>
+<body>
+  <div class="wrap">
+    <canvas id="c"></canvas>
+
+    <!-- Optional: if you upload song.mp3 into the repo, it will play -->
+    <audio id="bgm" loop>
+      <source src="song.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="ui">
+      <div class="title">Happy Valentine’s Day<br/>My bby 💗</div>
+
+      <div class="sig">
+        <span style="font-size:16px;">❤️</span>
+        <span>I love you, Dimi.</span>
+      </div>
+
+      <div class="chip">
+        <button id="muteBtn">Mute</button>
+      </div>
+    </div>
   </div>
-</div>
 
 <script>
 (() => {
@@ -40,6 +114,7 @@
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
 
+  // Fit canvas to iPhone + desktop
   function resize(){
     const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
     canvas.width  = Math.floor(window.innerWidth  * dpr);
@@ -50,9 +125,20 @@
   window.addEventListener("resize", resize);
   resize();
 
-  // Safe chime
+  // ===== Audio =====
+  const bgm = document.getElementById("bgm");
+
   let muted = false;
+
+  // chime + backup original melody (NOT Sofia)
   const AC = new (window.AudioContext||window.webkitAudioContext)();
+  let melodyOn = false;
+  let melodyTimer = null;
+
+  function safeResumeAudio(){
+    if (AC.state === "suspended") AC.resume();
+  }
+
   function chime(){
     if(muted) return;
     const now = AC.currentTime;
@@ -67,13 +153,55 @@
     o.connect(g).connect(AC.destination);
     o.start(now); o.stop(now+0.18);
   }
-  document.getElementById("muteBtn").onclick = () => {
+
+  // A cute original loop (simple pop-y, not any copyrighted melody)
+  function startOriginalMelody(){
+    if(melodyOn) return;
+    melodyOn = true;
+
+    const notes = [523.25, 587.33, 659.25, 587.33, 523.25, 493.88, 440.00, 493.88]; // C5 D5 E5 D5 C5 B4 A4 B4
+    let i = 0;
+
+    melodyTimer = setInterval(() => {
+      if(muted) return;
+      const now = AC.currentTime;
+      const o = AC.createOscillator();
+      const g = AC.createGain();
+      o.type = "sine";
+      o.frequency.value = notes[i % notes.length];
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(0.06, now+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, now+0.28);
+      o.connect(g).connect(AC.destination);
+      o.start(now);
+      o.stop(now+0.3);
+      i++;
+    }, 320);
+  }
+
+  async function tryPlayBgmOrMelody(){
+    // Try playing uploaded song.mp3 first; if it fails, use original melody.
+    if(bgm && bgm.querySelector("source")?.getAttribute("src")){
+      try{
+        bgm.muted = muted;
+        await bgm.play();
+        return;
+      } catch(e){
+        // ignore and fall back
+      }
+    }
+    startOriginalMelody();
+  }
+
+  const muteBtn = document.getElementById("muteBtn");
+  muteBtn.onclick = () => {
     muted = !muted;
-    document.getElementById("muteBtn").textContent = muted ? "Unmute" : "Mute";
+    muteBtn.textContent = muted ? "Unmute" : "Mute";
+    if (bgm) bgm.muted = muted;
     chime();
   };
 
-  // 20 love sentences
+  // ===== Love messages (20) =====
   const messages = [
     "I'm so proud of you.",
     "You are my sunshine.",
@@ -98,15 +226,15 @@
   ];
   let msgIndex = 0;
 
-  // Sky message bubble
+  // sky text bubble
   let skyText = "Tap anywhere to drop cheese 🧀";
-  let skyTimer = 240;
+  let skyTimer = 240; // frames
   function showSkyMessage(text){
     skyText = text;
-    skyTimer = 240;
+    skyTimer = 260;
   }
 
-  // Helpers
+  // ===== Helpers =====
   function irand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
   function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
   function getHorizon(H){ return Math.floor(H * 0.40); }
@@ -118,27 +246,39 @@
     blocks.forEach(([bx,by])=>ctx.fillRect(Math.round(x+bx*px),Math.round(y+by*px),px,px));
   }
 
-  // Bigger tulip
-  function tulip(x,y,petal){
+  // BIG tulip 🌷
+  function tulipBig(x,y,petal){
+    const S = 1.8; // bigger flower size
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.scale(S,S);
+
+    // stem
     ctx.fillStyle="#2fbf4b";
-    ctx.fillRect(x+6,y+16,4,26);
-    ctx.fillRect(x+2,y+28,6,4);
-    ctx.fillRect(x+10,y+30,6,4);
+    ctx.fillRect(6,16,4,26);
+    // leaves
+    ctx.fillRect(2,28,6,4);
+    ctx.fillRect(10,30,6,4);
 
+    // petals
     ctx.fillStyle=petal;
-    ctx.fillRect(x+4,y+6,12,10);
-    ctx.fillRect(x+2,y+10,4,8);
-    ctx.fillRect(x+16,y+10,4,8);
-    ctx.fillRect(x+8,y+4,4,4);
+    ctx.fillRect(4,6,12,10);
+    ctx.fillRect(2,10,4,8);
+    ctx.fillRect(16,10,4,8);
+    ctx.fillRect(8,4,4,4);
 
+    // tiny shadow line
     ctx.fillStyle="rgba(0,0,0,.12)";
-    ctx.fillRect(x+4,y+16,12,2);
+    ctx.fillRect(4,16,12,2);
+
+    ctx.restore();
   }
 
+  // Cheese 🧀
   function cheese(x,y){
     ctx.fillStyle="#ffd24a";
     ctx.fillRect(x,y,18,14);
-    ctx.clearRect(x+14,y,4,4);
+    ctx.clearRect(x+14,y,4,4); // bite
     ctx.fillStyle="#e7b93d";
     ctx.fillRect(x+4,y+4,2,2);
     ctx.fillRect(x+10,y+7,2,2);
@@ -147,49 +287,67 @@
     ctx.fillRect(x,y+12,18,2);
   }
 
-  // Girl rat (simple)
-  function girlRat(x,y,dir){
+  // BIG girl rat 🐭🎀
+  function girlRat(x,y,dir,scale=1.8){
     ctx.save();
     ctx.translate(x,y);
-    ctx.scale(dir,1);
+    ctx.scale(dir*scale, scale);
 
+    // shadow
     ctx.fillStyle="rgba(0,0,0,.15)";
     ctx.fillRect(-8, 14, 16, 3);
 
-    ctx.fillStyle="#caa1aa"; // tail
+    // tail
+    ctx.fillStyle="#caa1aa";
     ctx.fillRect(-14, 10, 6, 2);
     ctx.fillRect(-16, 9, 2, 2);
 
-    ctx.fillStyle="#b7b0b8"; // body
+    // body
+    ctx.fillStyle="#b7b0b8";
     ctx.fillRect(-8, 4, 16, 10);
 
-    ctx.fillStyle="#c3bcc4"; // head
+    // head
+    ctx.fillStyle="#c3bcc4";
     ctx.fillRect(2, 0, 10, 10);
 
-    ctx.fillStyle="#c3bcc4"; // ear
+    // ear
+    ctx.fillStyle="#c3bcc4";
     ctx.fillRect(8, -2, 4, 4);
     ctx.fillStyle="#e7a7b8";
     ctx.fillRect(9, -1, 2, 2);
 
-    ctx.fillStyle="#000"; // face
-    ctx.fillRect(9, 4, 1, 1);
-    ctx.fillRect(12, 6, 2, 1);
+    // face
+    ctx.fillStyle="#000";
+    ctx.fillRect(9, 4, 1, 1);  // eye
+    ctx.fillRect(12, 6, 2, 1); // nose
     ctx.fillStyle="#fff";
-    ctx.fillRect(10, 4, 1, 1);
+    ctx.fillRect(10, 4, 1, 1); // sparkle
 
-    ctx.fillStyle="#ff5aa5"; // bow
+    // bow
+    ctx.fillStyle="#ff5aa5";
     ctx.fillRect(6, -3, 3, 3);
     ctx.fillRect(10, -3, 3, 3);
     ctx.fillRect(9, -2, 1, 1);
 
-    ctx.fillStyle="#8e8790"; // feet
+    // feet
+    ctx.fillStyle="#8e8790";
     ctx.fillRect(-6, 13, 4, 2);
     ctx.fillRect(2, 13, 4, 2);
 
     ctx.restore();
   }
 
-  // Text bubble helpers
+  // bubble drawing
+  function roundRect(x,y,w,h,r,fill){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+    if(fill) ctx.fill(); else ctx.stroke();
+  }
   function wrapText(text, maxWidth){
     const words = text.split(" ");
     const lines = [];
@@ -202,45 +360,51 @@
     if(line) lines.push(line);
     return lines.slice(0,4);
   }
-  function roundRect(x,y,w,h,r,fill){
-    ctx.beginPath();
-    ctx.moveTo(x+r, y);
-    ctx.arcTo(x+w, y, x+w, y+h, r);
-    ctx.arcTo(x+w, y+h, x, y+h, r);
-    ctx.arcTo(x, y+h, x, y, r);
-    ctx.arcTo(x, y, x+w, y, r);
-    ctx.closePath();
-    if(fill) ctx.fill(); else ctx.stroke();
-  }
 
-  // Game state
-  const planted = [];
+  // ===== Game state =====
+  const plantedTulips = [];
   let currentCheese = null;
 
-  const rat = { x: 80, y: 0, speed: 2.2, dir: 1, target: null, busy: false };
+  const rat = {
+    x: 90,
+    y: 0,
+    speed: 2.4,
+    dir: 1,
+    target: null,
+    busy: false
+  };
 
   function placeCheeseAt(x,y){
     const horizon = getHorizon(window.innerHeight);
     if(y < horizon+10) return;
+
     currentCheese = { x: Math.round(x-9), y: Math.round(y-7) };
     rat.target = { x: currentCheese.x + 6, y: currentCheese.y + 10 };
     rat.busy = true;
     rat.dir = (rat.target.x >= rat.x) ? 1 : -1;
+
     showSkyMessage("Cheese spotted! 🧀");
     chime();
   }
 
   function updateRat(){
     if(!rat.busy || !rat.target) return;
+
     const dx = rat.target.x - rat.x;
     const dy = rat.target.y - rat.y;
     const dist = Math.hypot(dx,dy);
 
     if(dist < 3){
+      // Eat cheese -> spawn BIG tulip
       if(currentCheese){
         const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ff7aa5"];
-        planted.push({ x: currentCheese.x - 3, y: currentCheese.y - 26, c: colors[Math.floor(Math.random()*colors.length)] });
+        plantedTulips.push({
+          x: currentCheese.x - 8,
+          y: currentCheese.y - 44,
+          c: colors[Math.floor(Math.random()*colors.length)]
+        });
         currentCheese = null;
+
         showSkyMessage(messages[msgIndex]);
         msgIndex = (msgIndex + 1) % messages.length;
         chime();
@@ -252,7 +416,8 @@
 
     const vx = (dx / dist) * rat.speed;
     const vy = (dy / dist) * rat.speed;
-    rat.x += vx; rat.y += vy;
+    rat.x += vx;
+    rat.y += vy;
     rat.dir = (vx >= 0) ? 1 : -1;
   }
 
@@ -262,32 +427,38 @@
     const W = window.innerWidth, H = window.innerHeight;
     const horizon = getHorizon(H);
 
-    // sky
+    // sky gradient
     const g = ctx.createLinearGradient(0,0,0,H);
     g.addColorStop(0,"#79b7ff");
     g.addColorStop(1,"#bfe6ff");
-    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle=g;
+    ctx.fillRect(0,0,W,H);
 
-    pixelCloud(40 + Math.sin(t/80)*6, 70, 1.1);
+    // clouds
+    pixelCloud(35 + Math.sin(t/80)*6, 70, 1.1);
     pixelCloud(220 + Math.sin(t/95)*7, 110, 1.3);
 
     // grass
-    ctx.fillStyle="#155f28"; ctx.fillRect(0,horizon,W,H-horizon);
-    ctx.fillStyle="rgba(0,0,0,.12)";
-    for(let y=horizon;y<H;y+=18) ctx.fillRect(0,y,W,3);
+    ctx.fillStyle="#155f28";
+    ctx.fillRect(0,horizon,W,H-horizon);
 
-    // sprinkles
+    // grass stripes
+    ctx.fillStyle="rgba(0,0,0,.12)";
+    for(let y=horizon; y<H; y+=18) ctx.fillRect(0,y,W,3);
+
+    // tiny sparkles/confetti
     for(let i=0;i<60;i++){
       const x = irand(0,W-2);
       const y = irand(horizon+30, H-12);
       const c = ["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff"][irand(0,4)];
-      ctx.fillStyle=c; ctx.fillRect(x,y,2,2);
+      ctx.fillStyle=c;
+      ctx.fillRect(x,y,2,2);
     }
 
     // tulips
-    planted.forEach(p => tulip(p.x, p.y, p.c));
+    plantedTulips.forEach(p => tulipBig(p.x, p.y, p.c));
 
-    // cheese
+    // current cheese
     if(currentCheese){
       const bob = Math.sin(t/20)*1.2;
       cheese(currentCheese.x, currentCheese.y + bob);
@@ -298,11 +469,12 @@
       rat.y = clamp(rat.y || (horizon+90), horizon+40, H-40);
     }
     updateRat();
-    girlRat(Math.round(rat.x), Math.round(rat.y), rat.dir);
+    girlRat(Math.round(rat.x), Math.round(rat.y), rat.dir, 1.8);
 
-    // sky bubble
+    // sky message bubble
     if(skyTimer > 0) skyTimer--;
     const textToShow = skyTimer > 0 ? skyText : "Tap anywhere to drop cheese 🧀";
+
     ctx.font = "14px 'Press Start 2P'";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -313,33 +485,47 @@
     const bubbleH = lines.length * 20 + padding*2;
     const bubbleW = maxW;
     const bx = (W - bubbleW) / 2;
-    const by = 54;
+    const by = 70;
 
     ctx.fillStyle = "rgba(27,21,48,.55)";
     roundRect(bx, by, bubbleW, bubbleH, 14, true);
+
     ctx.strokeStyle = "rgba(255,255,255,.18)";
     ctx.lineWidth = 2;
     roundRect(bx, by, bubbleW, bubbleH, 14, false);
 
     ctx.fillStyle="#fff";
     ctx.shadowColor="rgba(0,0,0,.45)";
-    ctx.shadowOffsetX=2; ctx.shadowOffsetY=2; ctx.shadowBlur=0;
+    ctx.shadowOffsetX=2;
+    ctx.shadowOffsetY=2;
+    ctx.shadowBlur=0;
 
     let ty = by + padding + 10;
-    lines.forEach(line => { ctx.fillText(line, W/2, ty); ty += 20; });
+    for(const line of lines){
+      ctx.fillText(line, W/2, ty);
+      ty += 20;
+    }
 
-    ctx.shadowOffsetX=0; ctx.shadowOffsetY=0;
+    ctx.shadowOffsetX=0;
+    ctx.shadowOffsetY=0;
 
     requestAnimationFrame(draw);
   }
 
+  // Tap interaction: drop cheese + start music
   canvas.addEventListener("pointerdown", (e) => {
-    if(AC.state==="suspended") AC.resume();
+    safeResumeAudio();
+    tryPlayBgmOrMelody(); // starts bgm or original melody after user tap (iPhone rule)
+
     const rect = canvas.getBoundingClientRect();
-    placeCheeseAt(e.clientX - rect.left, e.clientY - rect.top);
+    const mx = (e.clientX - rect.left);
+    const my = (e.clientY - rect.top);
+    placeCheeseAt(mx, my);
   });
 
-  rat.y = getHorizon(window.innerHeight) + 90;
+  // Start
+  rat.y = getHorizon(window.innerHeight) + 100;
+  showSkyMessage("Tap anywhere to drop cheese 🧀");
   draw();
 })();
 </script>
