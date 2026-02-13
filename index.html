@@ -405,48 +405,60 @@
   // =========================
   // Message bubble (middle of sky)
   // =========================
-  function drawBubbleMiddleSky(){
-    const skyTop = 130;
-    const skyBottom = GROUND_Y - 22;
-    const midY = (skyTop + skyBottom) / 2;
+ function drawSpacedLine(text, y, fontPx, letterSpacing, glow=true){
+  ctx.save();
+  ctx.font = `${fontPx}px 'Press Start 2P'`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
 
-    const bw = VW - 56;
-    const bx = (VW - bw) / 2;
+  // total width with spacing
+  let totalW = 0;
+  for (const ch of text) totalW += ctx.measureText(ch).width + letterSpacing;
+  if (text.length) totalW -= letterSpacing;
 
-    ctx.font="11px 'Press Start 2P'";
-    const lines = wrapLines(bubbleText, bw - 28);
-    const lineH = 16;
-    const bh = 20 + lines.length * lineH;
-    const by = midY - bh/2;
+  let x = (VW - totalW) / 2;
 
-    // rainbow sparkles around bubble
-    if(sparkleTimer>0){
-      sparkleTimer--;
-      const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"];
-      for(let i=0;i<30;i++){
-        const x = bx + Math.random()*bw;
-        const y = by + Math.random()*bh;
-        ctx.fillStyle = colors[(Math.random()*colors.length)|0];
-        ctx.fillRect(x + (Math.random()*14-7), y + (Math.random()*14-7), 2, 2);
-      }
+  for (const ch of text){
+    ctx.save();
+    ctx.translate(x, y);
+    if(glow){
+      ctx.shadowColor = "#ff66c4";
+      ctx.shadowBlur = 10;
     }
+    ctx.fillStyle = "#ff4fa3";
+    ctx.fillText(ch, 0, 0);
+    ctx.restore();
 
-    ctx.fillStyle="rgba(40,40,90,.65)";
-    roundRect(bx,by,bw,bh,14,true);
-
-    ctx.strokeStyle="rgba(255,255,255,.20)";
-    ctx.lineWidth=2;
-    roundRect(bx,by,bw,bh,14,false);
-
-    ctx.fillStyle="#fff";
-    ctx.textAlign="center";
-    ctx.textBaseline="middle";
-    let ty = by + 12 + lineH/2;
-    for(const ln of lines){
-      ctx.fillText(ln, VW/2, ty);
-      ty += lineH;
-    }
+    x += ctx.measureText(ch).width + letterSpacing;
   }
+
+  ctx.restore();
+}
+
+drawTitleTwoLines("Happy Valentine’s Day", "My bby 💗", 112, 142);
+
+  // try big -> smaller until it fits
+  const maxW = VW - 26;
+  let font = 16;
+  let spacing = 6;
+
+  function lineWidth(text){
+    ctx.font = `${font}px 'Press Start 2P'`;
+    let w = 0;
+    for(const ch of text) w += ctx.measureText(ch).width + spacing;
+    if(text.length) w -= spacing;
+    return w;
+  }
+
+  while ((lineWidth(line1) > maxW || lineWidth(line2) > maxW) && font > 10){
+    font -= 1;
+    spacing = Math.max(2, spacing - 0.5);
+  }
+
+  drawSpacedLine(line1, y1, font, spacing, true);
+  drawSpacedLine(line2, y2, font, spacing, true);
+}
+
 
   // =========================
   // Game sprites (rat/cheese/flowers)
