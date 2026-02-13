@@ -364,53 +364,40 @@
   // =========================
   // Title (arc + more spacing, always in frame)
   // =========================
-  function drawArcLine(text, t, yBase, radius, fontPx, spacingBoost){
+  function drawTitle(text, y, fontPx, letterSpacing){
   ctx.save();
   ctx.font = `${fontPx}px 'Press Start 2P'`;
-  ctx.textAlign="center";
-  ctx.textBaseline="middle";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
 
-  const chars = text.split("");
-  const total = chars.length;
+  // measure total width with spacing
+  let totalWidth = 0;
+  for(const ch of text){
+    totalWidth += ctx.measureText(ch).width + letterSpacing;
+  }
 
-  // wider arc range
-  const start = Math.PI*1.20;
-  const end   = Math.PI*1.80;
+  let x = VW/2 - totalWidth/2;
 
-  // bigger spacing
-  const stepBase = (end-start) / Math.max(1,total-1);
-  const step = stepBase * spacingBoost;
-
-  // recenter widened span so it stays inside frame
-  const span = step * (total-1);
-  const start2 = (start + end - span) / 2;
-
-  for(let i=0;i<total;i++){
-    const a = start2 + step*i;
-
-    // soft wave motion
-    const wave = Math.sin(t/18 + i*0.6) * 2.2;
-
-    const x = VW/2 + Math.cos(a)*radius;
-    const y = yBase + Math.sin(a)*radius*0.48 + wave;
-
-    // glow effect
+  for(const ch of text){
     ctx.save();
-    ctx.translate(x,y);
-    ctx.rotate(a+Math.PI/2);
+    ctx.translate(x, y);
 
-    ctx.shadowColor = "#ff7acb";
+    // glow
+    ctx.shadowColor = "#ff66c4";
     ctx.shadowBlur = 12;
 
-    ctx.fillStyle="#ff66c4";   // brighter pink
-    ctx.fillText(chars[i],0,0);
+    ctx.fillStyle = "#ff4fa3";
+    ctx.fillText(ch, 0, 0);
 
     ctx.shadowBlur = 0;
     ctx.restore();
+
+    x += ctx.measureText(ch).width + letterSpacing;
   }
 
   ctx.restore();
 }
+
 
 
 
@@ -655,7 +642,8 @@
     drawMeadow();
 
     // title (arc, spaced, stays in frame)
-   drawArcLine("Happy Valentine’s Day My bby", t, 78, 115, 14, 1.25);
+   drawTitle("Happy Valentine’s Day My bby", 120, 16, 6);
+
 
 
     // bubble (middle sky)
