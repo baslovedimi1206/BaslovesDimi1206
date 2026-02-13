@@ -10,15 +10,11 @@
     body{font-family:"Press Start 2P",system-ui}
     .wrap{position:relative;width:100vw;height:100vh}
     canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
-
     .btn{
-      position:absolute;
-      right:14px;
-      bottom:76px;
+      position:absolute; right:14px; bottom:76px;
       background:rgba(0,0,0,.35);
       border:2px solid rgba(255,255,255,.18);
-      border-radius:14px;
-      padding:10px;
+      border-radius:14px; padding:10px;
       backdrop-filter: blur(6px);
     }
     button{
@@ -54,9 +50,10 @@
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
 
-  // ===== Virtual game resolution =====
+  // ===== Virtual game screen =====
   const VW = 360, VH = 640;
   let scale = 1, offX = 0, offY = 0;
+
   function resize(){
     const dpr = window.devicePixelRatio || 1;
     canvas.width  = Math.floor(window.innerWidth * dpr);
@@ -71,12 +68,16 @@
   window.addEventListener("resize", resize);
   resize();
 
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
   function toGameCoords(clientX, clientY){
     const rect = canvas.getBoundingClientRect();
-    return {
-      x: (clientX - rect.left - offX) / scale,
-      y: (clientY - rect.top  - offY) / scale
-    };
+    let x = (clientX - rect.left - offX) / scale;
+    let y = (clientY - rect.top  - offY) / scale;
+    // ✅ keep taps inside the game screen
+    x = clamp(x, 0, VW);
+    y = clamp(y, 0, VH);
+    return { x, y };
   }
 
   // ===== Audio =====
@@ -84,7 +85,6 @@
   let muted = false;
   const AC = new (window.AudioContext||window.webkitAudioContext)();
   function safeResumeAudio(){ if(AC.state==="suspended") AC.resume(); }
-
   function chime(){
     if(muted) return;
     const now = AC.currentTime;
@@ -99,11 +99,9 @@
     o.connect(g).connect(AC.destination);
     o.start(now); o.stop(now+0.18);
   }
-
   async function tryPlaySofia(){
     try { bgm.muted = muted; await bgm.play(); } catch(e) {}
   }
-
   document.getElementById("muteBtn").onclick = () => {
     muted = !muted;
     bgm.muted = muted;
@@ -111,8 +109,8 @@
     chime();
   };
 
-  // ===== Game layout =====
-  const GROUND_Y = 270;
+  // ===== Layout =====
+  const GROUND_Y = 260;
   const sigText = "I love you, Dimi 💐";
 
   // ===== Messages =====
@@ -129,7 +127,7 @@
     "I choose you, again and again."
   ];
   let msgIndex = 0;
-  let bubbleText = "Tap anywhere to drop cheese 🧀";
+  let bubbleText = "Tap grass to drop cheese 🧀";
   let bubbleTimer = 220;
   let sparkleTimer = 0;
 
@@ -139,53 +137,138 @@
     sparkleTimer = 80;
   }
 
-  // ===== Sprites =====
+  // ===== Drawing helpers =====
+  function roundRect(x,y,w,h,r,fill){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+    fill ? ctx.fill() : ctx.stroke();
+  }
+
+  function drawBubbleCentered(){
+    const bx = 18, bw = VW-36, by = 140, bh = 62;
+
+    if(sparkleTimer>0){
+      sparkleTimer--;
+      const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"];
+      for(let i=0;i<28;i++){
+        const x = bx + Math.random()*bw;
+        const y = by + Math.random()*bh;
+        ctx.fillStyle = colors[(Math.random()*colors.length)|0];
+        ctx.fillRect(x + (Math.random()*18-9), y + (Math.random()*18-9), 2, 2);
+      }
+    }
+
+    ctx.fillStyle="rgba(27,21,48,.58)";
+    roundRect(bx,by,bw,bh,14,true);
+    ctx.strokeStyle="rgba(255,255,255,.2)";
+    ctx.lineWidth=2;
+    roundRect(bx,by,bw,bh,14,false);
+
+    ctx.fillStyle="#fff";
+    ctx.font="12px 'Press Start 2P'";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText(bubbleText, VW/2, by + bh/2);
+  }
+
+  function drawArcLine(text, t, yBase, radius, fontPx){
+    ctx.save();
+    ctx.font = `${fontPx}px 'Press Start 2P'`;
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+
+    const chars = text.split("");
+    const total = chars.length;
+    const start = Math.PI*1.18;
+    const end   = Math.PI*1.82;
+    const step  = (end-start) / Math.max(1,total-1);
+
+    for(let i=0;i<total;i++){
+      const a = start + step*i;
+      const wave = Math.sin(t/18 + i*0.7) * 2.2;
+      const x = VW/2 + Math.cos(a)*radius;
+      const y = yBase + Math.sin(a)*radius*0.55 + wave;
+
+      ctx.save();
+      ctx.translate(x+2,y+2);
+      ctx.rotate(a+Math.PI/2);
+      ctx.fillStyle="#000";
+      ctx.fillText(chars[i],0,0);
+      ctx.restore();
+
+      ctx.save();
+      ctx.translate(x,y);
+      ctx.rotate(a+Math.PI/2);
+      ctx.fillStyle="#ff4fa3";
+      ctx.fillText(chars[i],0,0);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  // clouds / sprites (BIGGER)
   function drawCloud(x,y){
     ctx.fillStyle="#fff";
-    ctx.fillRect(x+6,y,24,12);
-    ctx.fillRect(x,y+6,36,14);
-    ctx.fillRect(x+10,y+16,22,10);
+    ctx.fillRect(x+8,y,28,14);
+    ctx.fillRect(x,y+6,44,16);
+    ctx.fillRect(x+12,y+18,28,12);
   }
 
   function drawCheese(x,y){
-    // nicer wedge cheese + holes
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.scale(1.3,1.3);
+
     ctx.fillStyle="#ffd24a";
     ctx.beginPath();
-    ctx.moveTo(x, y+20);
-    ctx.lineTo(x+30, y+10);
-    ctx.lineTo(x+30, y+30);
+    ctx.moveTo(0, 18);
+    ctx.lineTo(30, 10);
+    ctx.lineTo(30, 30);
     ctx.closePath();
     ctx.fill();
 
     ctx.fillStyle="#e7b93d";
-    ctx.fillRect(x+7,  y+20, 3, 3);
-    ctx.fillRect(x+14, y+17, 3, 3);
-    ctx.fillRect(x+20, y+22, 3, 3);
+    ctx.fillRect(7, 20, 3, 3);
+    ctx.fillRect(14, 17, 3, 3);
+    ctx.fillRect(20, 22, 3, 3);
 
     ctx.fillStyle="rgba(0,0,0,.15)";
-    ctx.fillRect(x+28, y+12, 2, 18);
+    ctx.fillRect(28, 12, 2, 18);
+
+    ctx.restore();
   }
 
   function drawFlower(x,y,petal){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.scale(1.2,1.2);
+
     ctx.fillStyle="#2fbf4b";
-    ctx.fillRect(x+12, y+22, 4, 30);
-    ctx.fillRect(x+5,  y+34, 8, 4);
-    ctx.fillRect(x+15, y+40, 10, 4);
+    ctx.fillRect(12, 22, 4, 30);
+    ctx.fillRect(5,  34, 8, 4);
+    ctx.fillRect(15, 40, 10, 4);
 
     ctx.fillStyle=petal;
-    ctx.fillRect(x+6,  y+8,  16, 14);
-    ctx.fillRect(x+2,  y+12, 6,  8);
-    ctx.fillRect(x+22, y+12, 6,  8);
-    ctx.fillRect(x+10, y+4,  8,  6);
+    ctx.fillRect(6,  8,  16, 14);
+    ctx.fillRect(2,  12, 6,  8);
+    ctx.fillRect(22, 12, 6,  8);
+    ctx.fillRect(10, 4,  8,  6);
 
     ctx.fillStyle="#ffd24a";
-    ctx.fillRect(x+12, y+13, 4, 4);
+    ctx.fillRect(12, 13, 4, 4);
+
+    ctx.restore();
   }
 
   function drawRat(x,y,dir){
     ctx.save();
     ctx.translate(x,y);
-    ctx.scale(dir,1);
+    ctx.scale(dir*1.4, 1.4);
 
     ctx.fillStyle="#b7b0b8";
     ctx.fillRect(-10, -6, 20, 12);
@@ -217,100 +300,21 @@
     ctx.restore();
   }
 
-  function roundRect(x,y,w,h,r,fill){
-    ctx.beginPath();
-    ctx.moveTo(x+r,y);
-    ctx.arcTo(x+w,y,x+w,y+h,r);
-    ctx.arcTo(x+w,y+h,x,y+h,r);
-    ctx.arcTo(x,y+h,x,y,r);
-    ctx.arcTo(x,y,x+w,y,r);
-    ctx.closePath();
-    fill ? ctx.fill() : ctx.stroke();
-  }
-
-  function drawBubbleCentered(){
-    const bx = 18;
-    const bw = VW - 36;
-    const by = 140;   // lower so title has space
-    const bh = 62;
-
-    if(sparkleTimer>0){
-      sparkleTimer--;
-      const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"];
-      for(let i=0;i<26;i++){
-        const x = bx + Math.random()*bw;
-        const y = by + Math.random()*bh;
-        ctx.fillStyle = colors[(Math.random()*colors.length)|0];
-        ctx.fillRect(x + (Math.random()*18-9), y + (Math.random()*18-9), 2, 2);
-      }
-    }
-
-    ctx.fillStyle="rgba(27,21,48,.58)";
-    roundRect(bx,by,bw,bh,14,true);
-
-    ctx.strokeStyle="rgba(255,255,255,.2)";
-    ctx.lineWidth=2;
-    roundRect(bx,by,bw,bh,14,false);
-
-    ctx.fillStyle="#fff";
-    ctx.font="12px 'Press Start 2P'";
-    ctx.textAlign="center";
-    ctx.textBaseline="middle";
-    ctx.fillText(bubbleText, VW/2, by + bh/2);
-  }
-
-  // ✅ SAFE ARC TITLE (ALWAYS FITS)
-  function drawArcLine(text, t, yBase, radius, fontPx){
-    ctx.save();
-    ctx.font = `${fontPx}px 'Press Start 2P'`;
-    ctx.textAlign="center";
-    ctx.textBaseline="middle";
-
-    const chars = text.split("");
-    const total = chars.length;
-
-    // tighter angles to keep inside screen
-    const start = Math.PI*1.18;
-    const end   = Math.PI*1.82;
-    const step  = (end-start) / Math.max(1,total-1);
-
-    for(let i=0;i<total;i++){
-      const a = start + step*i;
-      const wave = Math.sin(t/18 + i*0.7) * 2.2;
-
-      const x = VW/2 + Math.cos(a)*radius;
-      const y = yBase + Math.sin(a)*radius*0.55 + wave;
-
-      // shadow
-      ctx.save();
-      ctx.translate(x+2,y+2);
-      ctx.rotate(a+Math.PI/2);
-      ctx.fillStyle="#000";
-      ctx.fillText(chars[i],0,0);
-      ctx.restore();
-
-      // text
-      ctx.save();
-      ctx.translate(x,y);
-      ctx.rotate(a+Math.PI/2);
-      ctx.fillStyle="#ff4fa3";
-      ctx.fillText(chars[i],0,0);
-      ctx.restore();
-    }
-    ctx.restore();
-  }
-
   // ===== Game state =====
   const flowers = [];
   let cheese = null;
 
-  const rat = { x: 70, y: 520, dir: 1, speed: 2.8, target: null, busy:false };
+  // ✅ spawn rat clearly visible on grass
+  const rat = { x: 70, y: GROUND_Y + 210, dir: 1, speed: 3.0, target: null, busy:false };
 
   function dropCheese(gx,gy){
-    if(gy < GROUND_Y+20) return;
+    // only drop on grass
+    if(gy < GROUND_Y+10) return;
+
     cheese = { x: gx-12, y: gy-16 };
     rat.target = { x: cheese.x, y: cheese.y };
     rat.busy = true;
+
     showBubble("Cheese spotted! 🧀");
     chime();
   }
@@ -322,12 +326,12 @@
     const d = Math.hypot(dx,dy);
     rat.dir = dx >= 0 ? 1 : -1;
 
-    if(d < 6){
+    if(d < 7){
       if(cheese){
         const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ff7aa5"];
         flowers.push({
-          x: cheese.x - 6,
-          y: cheese.y - 54,
+          x: cheese.x - 10,
+          y: cheese.y - 64,
           c: colors[(Math.random()*colors.length)|0]
         });
         cheese = null;
@@ -343,8 +347,10 @@
 
     rat.x += (dx/d) * rat.speed;
     rat.y += (dy/d) * rat.speed;
-    rat.x = Math.max(16, Math.min(VW-16, rat.x));
-    rat.y = Math.max(GROUND_Y+30, Math.min(VH-70, rat.y));
+
+    // ✅ keep rat inside visible grass area
+    rat.x = clamp(rat.x, 22, VW-22);
+    rat.y = clamp(rat.y, GROUND_Y+60, VH-90);
   }
 
   // ===== Input =====
@@ -375,9 +381,9 @@
     ctx.fillRect(0,0,VW,VH);
 
     // moving clouds
-    const cloudShift = (t*0.6) % (VW+140);
-    drawCloud(30 + (cloudShift*0.55), 66);
-    drawCloud(-90 + (cloudShift*0.85), 104);
+    const cloudShift = (t*0.55) % (VW+180);
+    drawCloud(18 + cloudShift*0.55, 62);
+    drawCloud(-120 + cloudShift*0.85, 104);
 
     // ground
     ctx.fillStyle="#155f28";
@@ -385,16 +391,7 @@
     ctx.fillStyle="rgba(0,0,0,.12)";
     for(let y=GROUND_Y; y<VH; y+=18) ctx.fillRect(0,y,VW,3);
 
-    // confetti sparkles
-    for(let i=0;i<70;i++){
-      const x = (Math.random()*VW)|0;
-      const y = (GROUND_Y+20 + Math.random()*(VH-GROUND_Y-80))|0;
-      const c = ["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff"][i%5];
-      ctx.fillStyle=c;
-      ctx.fillRect(x,y,2,2);
-    }
-
-    // ✅ Title (2 lines) fully inside frame
+    // title
     drawArcLine("Happy Valentine’s Day", t, 54, 130, 14);
     drawArcLine("My bby 💗",            t, 86, 110, 14);
 
@@ -409,10 +406,9 @@
     updateRat();
     drawRat(Math.round(rat.x), Math.round(rat.y), rat.dir);
 
-    // bottom signature inside frame
+    // bottom signature
     ctx.fillStyle="rgba(0,0,0,.25)";
     ctx.fillRect(0, VH-48, VW, 48);
-
     ctx.fillStyle="#fff";
     ctx.font="14px 'Press Start 2P'";
     ctx.textAlign="center";
