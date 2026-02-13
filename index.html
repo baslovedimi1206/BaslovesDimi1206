@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <title>Happy Valentine’s Day </title>
+  <title>Happy Valentine’s Day 💗</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     html,body{margin:0;height:100%;background:#000;overflow:hidden}
@@ -11,7 +11,7 @@
     .wrap{position:relative;width:100vw;height:100vh}
     canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
     .btn{
-      position:absolute; right:14px; bottom:76px;
+      position:absolute; right:14px; bottom:110px;
       background:rgba(0,0,0,.35);
       border:2px solid rgba(255,255,255,.18);
       border-radius:14px; padding:10px;
@@ -39,6 +39,7 @@
     <button id="muteBtn">Mute</button>
   </div>
 
+  <!-- ONLY Sofia mp3 -->
   <audio id="bgm" loop preload="auto">
     <source src="AUD-20210820-WA0076.mp3" type="audio/mpeg">
   </audio>
@@ -50,7 +51,7 @@
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
 
-  // ===== Virtual game screen =====
+  // ===== Virtual game screen (always fits iPhone) =====
   const VW = 360, VH = 640;
   let scale = 1, offX = 0, offY = 0;
 
@@ -68,7 +69,7 @@
   window.addEventListener("resize", resize);
   resize();
 
-  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 
   function toGameCoords(clientX, clientY){
     const rect = canvas.getBoundingClientRect();
@@ -83,7 +84,7 @@
   const bgm = document.getElementById("bgm");
   let muted = false;
   const AC = new (window.AudioContext||window.webkitAudioContext)();
-  function safeResumeAudio(){ if(AC.state==="suspended") AC.resume(); }
+  const safeResumeAudio = ()=>{ if(AC.state==="suspended") AC.resume(); };
 
   function chime(){
     if(muted) return;
@@ -111,22 +112,22 @@
     chime();
   };
 
-  // ===== Layout =====
+  // ===== Layout (THIS DOESN’T DRAW BY ITSELF — draw() uses it) =====
   const GROUND_Y = 260;
-  const sigText = "I love you, Dimi";
+  const sigText = "I love you, Dimi 💐";
 
   // ===== Messages (20) =====
   const messages = [
     "I'm so proud of you.",
     "You are my sunshine.",
-    "You are the best gf.",
+    "You are the best girlfriend.",
     "You make my days brighter.",
     "I believe in you always.",
     "You are so strong.",
     "You are so kind.",
     "You inspire me every day.",
-    "I love your smile.",
-    "You my everything.",
+    "I love your smile so much.",
+    "I choose you, again and again.",
     "You mean the world to me.",
     "You are my favorite person.",
     "You make my heart feel calm.",
@@ -136,11 +137,11 @@
     "Being with you feels like home.",
     "You are more than enough.",
     "I adore everything about you.",
-    "Forever and always, my bby x"
+    "Forever and always, my bby 💗"
   ];
   let msgIndex = 0;
 
-  let bubbleText = "Tap grass to feed your rat ";
+  let bubbleText = "Tap grass to drop cheese 🧀";
   let bubbleTimer = 220;
   let sparkleTimer = 0;
 
@@ -150,7 +151,7 @@
     sparkleTimer = 80;
   }
 
-  // ===== Drawing helpers =====
+  // ===== Helpers =====
   function roundRect(x,y,w,h,r,fill){
     ctx.beginPath();
     ctx.moveTo(x+r,y);
@@ -162,20 +163,41 @@
     fill ? ctx.fill() : ctx.stroke();
   }
 
-  function drawBubbleCentered(){
-    const bx = 30;
+  function wrapLines(text, maxWidth){
+    const words = text.split(" ");
+    const lines = [];
+    let line = "";
+    for(const w of words){
+      const test = line ? (line + " " + w) : w;
+      if(ctx.measureText(test).width <= maxWidth) line = test;
+      else { if(line) lines.push(line); line = w; }
+    }
+    if(line) lines.push(line);
+    return lines.slice(0, 3);
+  }
+
+  function drawBubbleMiddleSky(){
+    const skyTop = 125;
+    const skyBottom = GROUND_Y - 18;
+    const midY = (skyTop + skyBottom) / 2;
+
     const bw = VW - 60;
-    const by = 160;
-    const bh = 56;
+    const bx = (VW - bw) / 2;
+
+    ctx.font="11px 'Press Start 2P'";
+    const lines = wrapLines(bubbleText, bw - 28);
+    const lineH = 16;
+    const bh = 22 + lines.length * lineH;
+    const by = midY - bh/2;
 
     if(sparkleTimer>0){
       sparkleTimer--;
       const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"];
-      for(let i=0;i<22;i++){
+      for(let i=0;i<26;i++){
         const x = bx + Math.random()*bw;
         const y = by + Math.random()*bh;
         ctx.fillStyle = colors[(Math.random()*colors.length)|0];
-        ctx.fillRect(x, y, 2, 2);
+        ctx.fillRect(x + (Math.random()*14-7), y + (Math.random()*14-7), 2, 2);
       }
     }
 
@@ -187,12 +209,51 @@
     roundRect(bx,by,bw,bh,14,false);
 
     ctx.fillStyle="#fff";
-    ctx.font="11px 'Press Start 2P'";
     ctx.textAlign="center";
     ctx.textBaseline="middle";
-    ctx.fillText(bubbleText, VW/2, by + bh/2);
+    let ty = by + 14 + lineH/2;
+    for(const ln of lines){
+      ctx.fillText(ln, VW/2, ty);
+      ty += lineH;
+    }
   }
 
+  // ===== Sky decorations =====
+  function drawCloud(x,y,scale=1){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.scale(scale,scale);
+    ctx.fillStyle="#fff";
+    ctx.fillRect(8,0,28,14);
+    ctx.fillRect(0,6,44,16);
+    ctx.fillRect(12,18,28,12);
+    ctx.restore();
+  }
+
+  function drawRainbow(){
+    // soft pixel rainbow arc (top sky)
+    const cx = VW/2;
+    const cy = 250;
+    const rings = [
+      { r: 260, c: "rgba(255,80,130,.35)" },
+      { r: 252, c: "rgba(255,170,70,.35)" },
+      { r: 244, c: "rgba(255,230,90,.35)" },
+      { r: 236, c: "rgba(120,255,140,.35)" },
+      { r: 228, c: "rgba(120,210,255,.35)" },
+      { r: 220, c: "rgba(180,140,255,.35)" },
+    ];
+    ctx.save();
+    ctx.lineWidth = 10;
+    for(const ring of rings){
+      ctx.strokeStyle = ring.c;
+      ctx.beginPath();
+      ctx.arc(cx, cy, ring.r, Math.PI*1.08, Math.PI*1.92);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // ===== Title =====
   function drawArcLine(text, t, yBase, radius, fontPx){
     ctx.save();
     ctx.font = `${fontPx}px 'Press Start 2P'`;
@@ -230,14 +291,7 @@
     ctx.restore();
   }
 
-  // clouds / sprites
-  function drawCloud(x,y){
-    ctx.fillStyle="#fff";
-    ctx.fillRect(x+8,y,28,14);
-    ctx.fillRect(x,y+6,44,16);
-    ctx.fillRect(x+12,y+18,28,12);
-  }
-
+  // ===== Game sprites =====
   function drawCheese(x,y){
     ctx.save();
     ctx.translate(x,y);
@@ -322,6 +376,7 @@
   // ===== Game state =====
   const flowers = [];
   let cheese = null;
+
   const rat = { x: 70, y: GROUND_Y + 210, dir: 1, speed: 3.0, target: null, busy:false };
 
   function dropCheese(gx,gy){
@@ -329,7 +384,7 @@
     cheese = { x: gx-12, y: gy-16 };
     rat.target = { x: cheese.x, y: cheese.y };
     rat.busy = true;
-    showBubble("Cheese spotted!");
+    showBubble("Cheese spotted! 🧀");
     chime();
   }
 
@@ -346,6 +401,7 @@
         flowers.push({ x: cheese.x - 10, y: cheese.y - 64, c: colors[(Math.random()*colors.length)|0] });
         cheese = null;
 
+        // ✅ loop forever
         showBubble(messages[msgIndex % messages.length]);
         msgIndex++;
         chime();
@@ -361,7 +417,6 @@
     rat.y = clamp(rat.y, GROUND_Y+60, VH-90);
   }
 
-  // ===== Input =====
   canvas.addEventListener("pointerdown",(e)=>{
     safeResumeAudio();
     tryPlaySofia();
@@ -388,10 +443,18 @@
     ctx.fillStyle = sky;
     ctx.fillRect(0,0,VW,VH);
 
-    // moving clouds
-    const cloudShift = (t*0.55) % (VW+180);
-    drawCloud(18 + cloudShift*0.55, 62);
-    drawCloud(-120 + cloudShift*0.85, 104);
+    // rainbow
+    drawRainbow();
+
+    // more moving clouds (4 layers)
+    const s1 = (t*0.40) % (VW+220);
+    const s2 = (t*0.55) % (VW+240);
+    const s3 = (t*0.70) % (VW+260);
+    const s4 = (t*0.90) % (VW+280);
+    drawCloud(-80 + s1*0.70, 46, 0.85);
+    drawCloud( 20 + s2*0.60, 74, 1.00);
+    drawCloud(-130+ s3*0.55, 104, 1.05);
+    drawCloud( 60 + s4*0.45, 128, 0.78);
 
     // ground
     ctx.fillStyle="#155f28";
@@ -399,13 +462,22 @@
     ctx.fillStyle="rgba(0,0,0,.12)";
     for(let y=GROUND_Y; y<VH; y+=18) ctx.fillRect(0,y,VW,3);
 
-    // title
+    // confetti sparkles on grass
+    for(let i=0;i<60;i++){
+      const x = (Math.random()*VW)|0;
+      const y = (GROUND_Y+20 + Math.random()*(VH-GROUND_Y-80))|0;
+      const c = ["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff"][i%5];
+      ctx.fillStyle=c;
+      ctx.fillRect(x,y,2,2);
+    }
+
+    // title (always inside frame)
     drawArcLine("Happy Valentine’s Day", t, 74, 105, 13);
     drawArcLine("My bby 💗",            t, 102, 85, 13);
 
-    // bubble
+    // bubble (middle sky)
     if(bubbleTimer>0) bubbleTimer--;
-    drawBubbleCentered();
+    drawBubbleMiddleSky();
 
     // objects
     flowers.forEach(f => drawFlower(f.x, f.y, f.c));
@@ -414,7 +486,7 @@
     updateRat();
     drawRat(Math.round(rat.x), Math.round(rat.y), rat.dir);
 
-    // bottom signature
+    // bottom signature (USES sigText)
     ctx.fillStyle="rgba(0,0,0,.25)";
     ctx.fillRect(0, VH-48, VW, 48);
     ctx.fillStyle="#fff";
@@ -427,8 +499,7 @@
     requestAnimationFrame(draw);
   }
 
-  // initial hint
-  showBubble("Tap grass to feed your rat");
+  showBubble("Tap grass to drop cheese 🧀");
   draw();
 })();
 </script>
