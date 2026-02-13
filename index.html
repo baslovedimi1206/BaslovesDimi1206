@@ -184,8 +184,8 @@
 
     const chars = text.split("");
     const total = chars.length;
-    const start = Math.PI*1.18;
-    const end   = Math.PI*1.82;
+    const start = Math.PI*1.23;
+    const end   = Math.PI*1.77;
     const step  = (end-start) / Math.max(1,total-1);
 
     for(let i=0;i<total;i++){
@@ -392,12 +392,43 @@
     for(let y=GROUND_Y; y<VH; y+=18) ctx.fillRect(0,y,VW,3);
 
     // title
-    drawArcLine("Happy Valentine’s Day", t, 54, 130, 14);
-    drawArcLine("My bby 💗",            t, 86, 110, 14);
+    drawArcLine("Happy Valentine’s Day", t, 74, 105, 13);
+    drawArcLine("My bby 💗",            t, 102, 85, 13);
+
 
     // bubble
     if(bubbleTimer>0) bubbleTimer--;
-    drawBubbleCentered();
+    function drawBubbleCentered(){
+  const bx = 30;
+  const bw = VW - 60;
+  const by = 160;
+  const bh = 56;
+
+  if(sparkleTimer>0){
+    sparkleTimer--;
+    const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"];
+    for(let i=0;i<20;i++){
+      const x = bx + Math.random()*bw;
+      const y = by + Math.random()*bh;
+      ctx.fillStyle = colors[(Math.random()*colors.length)|0];
+      ctx.fillRect(x, y, 2, 2);
+    }
+  }
+
+  ctx.fillStyle="rgba(40,40,90,.65)";
+  roundRect(bx,by,bw,bh,14,true);
+
+  ctx.strokeStyle="rgba(255,255,255,.2)";
+  ctx.lineWidth=2;
+  roundRect(bx,by,bw,bh,14,false);
+
+  ctx.fillStyle="#fff";
+  ctx.font="11px 'Press Start 2P'";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.fillText(bubbleText, VW/2, by + bh/2);
+}
+
 
     // objects
     flowers.forEach(f => drawFlower(f.x, f.y, f.c));
