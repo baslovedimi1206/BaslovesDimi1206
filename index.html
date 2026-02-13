@@ -1,10 +1,45 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Happy Valentine’s Day 💗</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    html,body{height:100%;margin:0;background:#0b0b16}
+    body{font-family:"Press Start 2P",system-ui;height:100dvh;overflow:hidden}
+    .wrap{position:relative;width:100vw;height:100dvh;background:#000;overflow:hidden}
+    canvas{width:100%;height:100%;image-rendering:pixelated;display:block}
+    .ui{position:absolute;inset:0;pointer-events:none}
+    .title{position:absolute;top:18px;left:50%;transform:translateX(-50%);
+      font-size:16px;color:#ff4fa3;text-shadow:2px 2px 0 #000;white-space:nowrap}
+    .sig{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);
+      display:flex;gap:10px;align-items:center;font-size:12px;color:#fff;text-shadow:2px 2px 0 #000}
+    .chip{pointer-events:auto;position:absolute;right:16px;bottom:16px;
+      padding:10px 12px;border-radius:14px;border:2px solid rgba(255,255,255,.2);
+      background:rgba(0,0,0,.35)}
+    button{pointer-events:auto;font-family:"Press Start 2P";font-size:10px;border:2px solid #000;
+      background:#fff2fb;color:#000;padding:10px;border-radius:12px;cursor:pointer;box-shadow:2px 2px 0 #000}
+    button:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #000}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <canvas id="c"></canvas>
+
+  <div class="ui">
+    <div class="title">Happy Valentine’s Day My bby</div>
+    <div class="sig"><span style="font-size:16px;">❤️</span><span>Love, Bas</span></div>
+    <div class="chip"><button id="muteBtn">Mute</button></div>
+  </div>
+</div>
+
 <script>
 (() => {
   const canvas = document.getElementById("c");
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
 
-  // Fit canvas to iPhone + desktop
   function resize(){
     const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
     canvas.width  = Math.floor(window.innerWidth  * dpr);
@@ -15,7 +50,7 @@
   window.addEventListener("resize", resize);
   resize();
 
-  // Safe cute chime
+  // Safe chime
   let muted = false;
   const AC = new (window.AudioContext||window.webkitAudioContext)();
   function chime(){
@@ -32,16 +67,13 @@
     o.connect(g).connect(AC.destination);
     o.start(now); o.stop(now+0.18);
   }
-  const muteBtn = document.getElementById("muteBtn");
-  if(muteBtn){
-    muteBtn.onclick = () => {
-      muted = !muted;
-      muteBtn.textContent = muted ? "Unmute" : "Mute";
-      chime();
-    };
-  }
+  document.getElementById("muteBtn").onclick = () => {
+    muted = !muted;
+    document.getElementById("muteBtn").textContent = muted ? "Unmute" : "Mute";
+    chime();
+  };
 
-  // ===== Love messages (20) =====
+  // 20 love sentences
   const messages = [
     "I'm so proud of you.",
     "You are my sunshine.",
@@ -50,7 +82,7 @@
     "I believe in you always.",
     "You are so strong.",
     "You are so kind.",
-    "You are so beautiful inside and out.",
+    "You are beautiful inside and out.",
     "You make me feel safe.",
     "Thank you for being you.",
     "I love your smile so much.",
@@ -59,29 +91,26 @@
     "You are my favorite person.",
     "I’m grateful for us.",
     "You make my heart feel calm.",
-    "You are doing amazing, my bby.",
+    "You’re doing amazing, my bby.",
     "I’m always cheering for you.",
     "You are more than enough.",
     "I choose you, again and again."
   ];
   let msgIndex = 0;
 
-  // message bubble in the sky
-  let skyText = "Tap cheese to plant tulips 🌷";
-  let skyTimer = 0; // frames
+  // Sky message bubble
+  let skyText = "Tap anywhere to drop cheese 🧀";
+  let skyTimer = 240;
   function showSkyMessage(text){
     skyText = text;
-    skyTimer = 240; // ~4 seconds at 60fps
+    skyTimer = 240;
   }
 
-  // ===== World state =====
-  const plantedTulips = [];
-  let t = 0;
-
+  // Helpers
   function irand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
   function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  function getHorizon(H){ return Math.floor(H * 0.40); }
 
-  // ===== Drawing helpers =====
   function pixelCloud(x,y,s){
     const px = 6*s;
     const blocks=[[1,0],[2,0],[3,0],[0,1],[1,1],[2,1],[3,1],[4,1],[1,2],[2,2],[3,2]];
@@ -89,8 +118,8 @@
     blocks.forEach(([bx,by])=>ctx.fillRect(Math.round(x+bx*px),Math.round(y+by*px),px,px));
   }
 
+  // Bigger tulip
   function tulip(x,y,petal){
-    // bigger pixel tulip
     ctx.fillStyle="#2fbf4b";
     ctx.fillRect(x+6,y+16,4,26);
     ctx.fillRect(x+2,y+28,6,4);
@@ -109,119 +138,109 @@
   function cheese(x,y){
     ctx.fillStyle="#ffd24a";
     ctx.fillRect(x,y,18,14);
-    ctx.clearRect(x+14,y,4,4); // bite
-
+    ctx.clearRect(x+14,y,4,4);
     ctx.fillStyle="#e7b93d";
     ctx.fillRect(x+4,y+4,2,2);
     ctx.fillRect(x+10,y+7,2,2);
     ctx.fillRect(x+6,y+10,2,2);
-
     ctx.fillStyle="rgba(0,0,0,.12)";
     ctx.fillRect(x,y+12,18,2);
   }
 
-  // Cute pixel “girl rat” (simple bow + tail)
+  // Girl rat (simple)
   function girlRat(x,y,dir){
-    // dir: -1 left, +1 right
     ctx.save();
     ctx.translate(x,y);
     ctx.scale(dir,1);
 
-    // shadow
     ctx.fillStyle="rgba(0,0,0,.15)";
     ctx.fillRect(-8, 14, 16, 3);
 
-    // tail
-    ctx.fillStyle="#caa1aa";
+    ctx.fillStyle="#caa1aa"; // tail
     ctx.fillRect(-14, 10, 6, 2);
     ctx.fillRect(-16, 9, 2, 2);
 
-    // body
-    ctx.fillStyle="#b7b0b8";
+    ctx.fillStyle="#b7b0b8"; // body
     ctx.fillRect(-8, 4, 16, 10);
 
-    // head
-    ctx.fillStyle="#c3bcc4";
+    ctx.fillStyle="#c3bcc4"; // head
     ctx.fillRect(2, 0, 10, 10);
 
-    // ear
-    ctx.fillStyle="#c3bcc4";
+    ctx.fillStyle="#c3bcc4"; // ear
     ctx.fillRect(8, -2, 4, 4);
     ctx.fillStyle="#e7a7b8";
     ctx.fillRect(9, -1, 2, 2);
 
-    // face details
-    ctx.fillStyle="#000";
-    ctx.fillRect(9, 4, 1, 1); // eye
-    ctx.fillRect(12, 6, 2, 1); // nose
+    ctx.fillStyle="#000"; // face
+    ctx.fillRect(9, 4, 1, 1);
+    ctx.fillRect(12, 6, 2, 1);
     ctx.fillStyle="#fff";
-    ctx.fillRect(10, 4, 1, 1); // sparkle eye
+    ctx.fillRect(10, 4, 1, 1);
 
-    // bow (girly)
-    ctx.fillStyle="#ff5aa5";
+    ctx.fillStyle="#ff5aa5"; // bow
     ctx.fillRect(6, -3, 3, 3);
     ctx.fillRect(10, -3, 3, 3);
     ctx.fillRect(9, -2, 1, 1);
 
-    // feet
-    ctx.fillStyle="#8e8790";
+    ctx.fillStyle="#8e8790"; // feet
     ctx.fillRect(-6, 13, 4, 2);
     ctx.fillRect(2, 13, 4, 2);
 
     ctx.restore();
   }
 
-  // ===== Rat + Cheese interaction =====
-  const rat = {
-    x: 80,
-    y: 0,
-    speed: 2.2,
-    dir: 1,
-    target: null, // {x,y}
-    busy: false
-  };
+  // Text bubble helpers
+  function wrapText(text, maxWidth){
+    const words = text.split(" ");
+    const lines = [];
+    let line = "";
+    for(const w of words){
+      const test = line ? line + " " + w : w;
+      if(ctx.measureText(test).width <= maxWidth) line = test;
+      else { if(line) lines.push(line); line = w; }
+    }
+    if(line) lines.push(line);
+    return lines.slice(0,4);
+  }
+  function roundRect(x,y,w,h,r,fill){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+    if(fill) ctx.fill(); else ctx.stroke();
+  }
 
-  let currentCheese = null; // {x,y}
+  // Game state
+  const planted = [];
+  let currentCheese = null;
 
-  function getHorizon(H){ return Math.floor(H * 0.40); }
+  const rat = { x: 80, y: 0, speed: 2.2, dir: 1, target: null, busy: false };
 
   function placeCheeseAt(x,y){
-    const H = window.innerHeight;
-    const horizon = getHorizon(H);
-
-    // only in grass
+    const horizon = getHorizon(window.innerHeight);
     if(y < horizon+10) return;
-
     currentCheese = { x: Math.round(x-9), y: Math.round(y-7) };
     rat.target = { x: currentCheese.x + 6, y: currentCheese.y + 10 };
     rat.busy = true;
-
-    // rat looks toward target
     rat.dir = (rat.target.x >= rat.x) ? 1 : -1;
-
     showSkyMessage("Cheese spotted! 🧀");
     chime();
   }
 
   function updateRat(){
     if(!rat.busy || !rat.target) return;
-
     const dx = rat.target.x - rat.x;
     const dy = rat.target.y - rat.y;
     const dist = Math.hypot(dx,dy);
 
     if(dist < 3){
-      // "eat" cheese -> plant tulip
       if(currentCheese){
         const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ff7aa5"];
-        plantedTulips.push({
-          x: currentCheese.x - 3,
-          y: currentCheese.y - 26,
-          c: colors[Math.floor(Math.random()*colors.length)]
-        });
+        planted.push({ x: currentCheese.x - 3, y: currentCheese.y - 26, c: colors[Math.floor(Math.random()*colors.length)] });
         currentCheese = null;
-
-        // show next love sentence
         showSkyMessage(messages[msgIndex]);
         msgIndex = (msgIndex + 1) % messages.length;
         chime();
@@ -233,25 +252,22 @@
 
     const vx = (dx / dist) * rat.speed;
     const vy = (dy / dist) * rat.speed;
-
-    rat.x += vx;
-    rat.y += vy;
+    rat.x += vx; rat.y += vy;
     rat.dir = (vx >= 0) ? 1 : -1;
   }
 
-  // ===== Main draw loop =====
+  let t = 0;
   function draw(){
     t++;
     const W = window.innerWidth, H = window.innerHeight;
     const horizon = getHorizon(H);
 
-    // background sky
+    // sky
     const g = ctx.createLinearGradient(0,0,0,H);
     g.addColorStop(0,"#79b7ff");
     g.addColorStop(1,"#bfe6ff");
     ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
 
-    // clouds
     pixelCloud(40 + Math.sin(t/80)*6, 70, 1.1);
     pixelCloud(220 + Math.sin(t/95)*7, 110, 1.3);
 
@@ -260,7 +276,7 @@
     ctx.fillStyle="rgba(0,0,0,.12)";
     for(let y=horizon;y<H;y+=18) ctx.fillRect(0,y,W,3);
 
-    // tiny confetti pixels
+    // sprinkles
     for(let i=0;i<60;i++){
       const x = irand(0,W-2);
       const y = irand(horizon+30, H-12);
@@ -268,37 +284,32 @@
       ctx.fillStyle=c; ctx.fillRect(x,y,2,2);
     }
 
-    // planted tulips
-    plantedTulips.forEach(p => tulip(p.x, p.y, p.c));
+    // tulips
+    planted.forEach(p => tulip(p.x, p.y, p.c));
 
-    // current cheese (only one at a time)
+    // cheese
     if(currentCheese){
-      // bob slightly
       const bob = Math.sin(t/20)*1.2;
       cheese(currentCheese.x, currentCheese.y + bob);
     }
 
     // rat
-    // keep rat on grass line-ish if no target
     if(!rat.busy){
-      rat.y = clamp(rat.y, horizon+40, H-40);
-      if(rat.y === 0) rat.y = horizon+80;
+      rat.y = clamp(rat.y || (horizon+90), horizon+40, H-40);
     }
     updateRat();
     girlRat(Math.round(rat.x), Math.round(rat.y), rat.dir);
 
-    // Sky text (top center)
-    // (draw as pixel text with background)
+    // sky bubble
     if(skyTimer > 0) skyTimer--;
-    const textToShow = skyTimer > 0 ? skyText : "Tap to drop cheese 🧀  (rat will plant tulips 🌷)";
+    const textToShow = skyTimer > 0 ? skyText : "Tap anywhere to drop cheese 🧀";
     ctx.font = "14px 'Press Start 2P'";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    // bubble
     const padding = 14;
     const maxW = Math.min(560, W - 30);
-    const lines = wrapText(textToShow, maxW - padding*2, ctx);
+    const lines = wrapText(textToShow, maxW - padding*2);
     const bubbleH = lines.length * 20 + padding*2;
     const bubbleW = maxW;
     const bx = (W - bubbleW) / 2;
@@ -310,66 +321,27 @@
     ctx.lineWidth = 2;
     roundRect(bx, by, bubbleW, bubbleH, 14, false);
 
-    ctx.fillStyle = "#fff";
-    ctx.shadowColor = "rgba(0,0,0,.45)";
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 2;
-    ctx.shadowBlur = 0;
+    ctx.fillStyle="#fff";
+    ctx.shadowColor="rgba(0,0,0,.45)";
+    ctx.shadowOffsetX=2; ctx.shadowOffsetY=2; ctx.shadowBlur=0;
 
     let ty = by + padding + 10;
-    lines.forEach(line=>{
-      ctx.fillText(line, W/2, ty);
-      ty += 20;
-    });
+    lines.forEach(line => { ctx.fillText(line, W/2, ty); ty += 20; });
 
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
+    ctx.shadowOffsetX=0; ctx.shadowOffsetY=0;
 
     requestAnimationFrame(draw);
   }
 
-  // text wrap helper
-  function wrapText(text, maxWidth, ctx){
-    const words = text.split(" ");
-    const lines = [];
-    let line = "";
-    for(const w of words){
-      const test = line ? line + " " + w : w;
-      if(ctx.measureText(test).width <= maxWidth){
-        line = test;
-      } else {
-        if(line) lines.push(line);
-        line = w;
-      }
-    }
-    if(line) lines.push(line);
-    return lines.slice(0, 4); // keep it neat
-  }
-
-  function roundRect(x, y, w, h, r, fill){
-    ctx.beginPath();
-    ctx.moveTo(x+r, y);
-    ctx.arcTo(x+w, y, x+w, y+h, r);
-    ctx.arcTo(x+w, y+h, x, y+h, r);
-    ctx.arcTo(x, y+h, x, y, r);
-    ctx.arcTo(x, y, x+w, y, r);
-    ctx.closePath();
-    if(fill) ctx.fill();
-    else ctx.stroke();
-  }
-
-  // Interaction: tap anywhere => drop cheese there
   canvas.addEventListener("pointerdown", (e) => {
     if(AC.state==="suspended") AC.resume();
     const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX-rect.left);
-    const my = (e.clientY-rect.top);
-    placeCheeseAt(mx, my);
+    placeCheeseAt(e.clientX - rect.left, e.clientY - rect.top);
   });
 
-  // Start
   rat.y = getHorizon(window.innerHeight) + 90;
-  showSkyMessage("Tap anywhere to drop cheese 🧀");
   draw();
 })();
 </script>
+</body>
+</html>
