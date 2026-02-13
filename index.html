@@ -3,15 +3,17 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <title>Happy Valentine’s Day </title>
+  <title>Happy Valentine’s Day</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     html,body{margin:0;height:100%;background:#000;overflow:hidden}
     body{font-family:"Press Start 2P",system-ui}
     .wrap{position:relative;width:100vw;height:100vh}
     canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+
+    /* move button higher so it never covers bottom text */
     .btn{
-      position:absolute; right:14px; bottom:120px;
+      position:absolute; right:14px; bottom:220px;
       background:rgba(0,0,0,.35);
       border:2px solid rgba(255,255,255,.18);
       border-radius:14px; padding:10px;
@@ -51,10 +53,13 @@
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
 
-  // ===== Virtual game screen (always fits iPhone) =====
+  // ===== Virtual game screen =====
   const VW = 360, VH = 640;
   let scale = 1, offX = 0, offY = 0;
 
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+
+  // ✅ COVER mode so it fills phone screen (looks like real game)
   function resize(){
     const dpr = window.devicePixelRatio || 1;
     canvas.width  = Math.floor(window.innerWidth * dpr);
@@ -62,14 +67,12 @@
     ctx.setTransform(1,0,0,1,0,0);
     ctx.scale(dpr, dpr);
 
-    scale = Math.min(window.innerWidth / VW, window.innerHeight / VH);
+    scale = Math.max(window.innerWidth / VW, window.innerHeight / VH);
     offX = (window.innerWidth  - VW * scale) / 2;
     offY = (window.innerHeight - VH * scale) / 2;
   }
   window.addEventListener("resize", resize);
   resize();
-
-  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 
   function toGameCoords(clientX, clientY){
     const rect = canvas.getBoundingClientRect();
@@ -148,7 +151,7 @@
   function showBubble(t){
     bubbleText = t;
     bubbleTimer = 260;
-    sparkleTimer = 80;
+    sparkleTimer = 90;
   }
 
   // ===== Helpers =====
@@ -177,8 +180,8 @@
   }
 
   function drawBubbleMiddleSky(){
-    const skyTop = 125;
-    const skyBottom = GROUND_Y - 18;
+    const skyTop = 120;
+    const skyBottom = GROUND_Y - 16;
     const midY = (skyTop + skyBottom) / 2;
 
     const bw = VW - 60;
@@ -193,11 +196,11 @@
     if(sparkleTimer>0){
       sparkleTimer--;
       const colors=["#ff5aa5","#ffd24a","#7fd6ff","#b68cff","#ffffff","#8cff7a"];
-      for(let i=0;i<26;i++){
+      for(let i=0;i<36;i++){
         const x = bx + Math.random()*bw;
         const y = by + Math.random()*bh;
         ctx.fillStyle = colors[(Math.random()*colors.length)|0];
-        ctx.fillRect(x + (Math.random()*14-7), y + (Math.random()*14-7), 2, 2);
+        ctx.fillRect(x + (Math.random()*16-8), y + (Math.random()*16-8), 2, 2);
       }
     }
 
@@ -232,14 +235,14 @@
 
   function drawRainbow(){
     const cx = VW/2;
-    const cy = 250;
+    const cy = 240;
     const rings = [
-      { r: 260, c: "rgba(255,80,130,.35)" },
-      { r: 252, c: "rgba(255,170,70,.35)" },
-      { r: 244, c: "rgba(255,230,90,.35)" },
-      { r: 236, c: "rgba(120,255,140,.35)" },
-      { r: 228, c: "rgba(120,210,255,.35)" },
-      { r: 220, c: "rgba(180,140,255,.35)" },
+      { r: 250, c: "rgba(255,80,130,.30)" },
+      { r: 242, c: "rgba(255,170,70,.30)" },
+      { r: 234, c: "rgba(255,230,90,.30)" },
+      { r: 226, c: "rgba(120,255,140,.30)" },
+      { r: 218, c: "rgba(120,210,255,.30)" },
+      { r: 210, c: "rgba(180,140,255,.30)" },
     ];
     ctx.save();
     ctx.lineWidth = 10;
@@ -264,12 +267,10 @@
     const start = Math.PI*1.23;
     const end   = Math.PI*1.77;
 
-    // ✅ extra spacing between letters
-    const spacingBoost = 1.12;
+    const spacingBoost = 1.16; // a bit more spacing
     const stepBase = (end-start) / Math.max(1,total-1);
     const step = stepBase * spacingBoost;
 
-    // center the widened arc so it stays in frame
     const span = step * (total-1);
     const start2 = (start + end - span) / 2;
 
@@ -384,7 +385,6 @@
 
   const rat = { x: 70, y: GROUND_Y + 210, dir: 1, speed: 3.0, target: null, busy:false };
 
-  // ✅ Tap anywhere to feed (no grass restriction)
   function dropCheese(gx,gy){
     gx = clamp(gx, 20, VW-20);
     gy = clamp(gy, 120, VH-90);
@@ -393,7 +393,7 @@
     rat.target = { x: cheese.x, y: cheese.y };
     rat.busy = true;
 
-    showBubble("Nom Nom");
+    showBubble("Nom Nom 🧀");
     chime();
   }
 
@@ -437,24 +437,23 @@
   function draw(){
     t++;
 
-    ctx.fillStyle="#000";
+    // background behind game = sky color (no ugly black bars)
+    ctx.fillStyle="#79b7ff";
     ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
 
     ctx.save();
     ctx.translate(offX, offY);
     ctx.scale(scale, scale);
 
-    // sky
     const sky = ctx.createLinearGradient(0,0,0,VH);
     sky.addColorStop(0,"#79b7ff");
     sky.addColorStop(1,"#bfe6ff");
     ctx.fillStyle = sky;
     ctx.fillRect(0,0,VW,VH);
 
-    // rainbow
     drawRainbow();
 
-    // more moving clouds (4 layers)
+    // clouds
     const s1 = (t*0.40) % (VW+220);
     const s2 = (t*0.55) % (VW+240);
     const s3 = (t*0.70) % (VW+260);
@@ -470,7 +469,7 @@
     ctx.fillStyle="rgba(0,0,0,.12)";
     for(let y=GROUND_Y; y<VH; y+=18) ctx.fillRect(0,y,VW,3);
 
-    // confetti sparkles on grass
+    // sparkles
     for(let i=0;i<60;i++){
       const x = (Math.random()*VW)|0;
       const y = (GROUND_Y+20 + Math.random()*(VH-GROUND_Y-80))|0;
@@ -479,11 +478,11 @@
       ctx.fillRect(x,y,2,2);
     }
 
-    // title (more spacing)
+    // title
     drawArcLine("Happy Valentine’s Day", t, 74, 105, 13);
-    drawArcLine("My bby",            t, 102, 85, 13);
+    drawArcLine("My bby 💗",            t, 102, 85, 13);
 
-    // bubble (middle sky)
+    // bubble
     if(bubbleTimer>0) bubbleTimer--;
     drawBubbleMiddleSky();
 
@@ -494,15 +493,15 @@
     updateRat();
     drawRat(Math.round(rat.x), Math.round(rat.y), rat.dir);
 
-    // bottom signature (bigger bar so always visible)
-    ctx.fillStyle="rgba(0,0,0,.25)";
-    ctx.fillRect(0, VH-58, VW, 58);
+    // bottom signature (taller + always visible)
+    ctx.fillStyle="rgba(0,0,0,.28)";
+    ctx.fillRect(0, VH-76, VW, 76);
 
     ctx.fillStyle="#fff";
     ctx.font="13px 'Press Start 2P'";
     ctx.textAlign="center";
     ctx.textBaseline="middle";
-    ctx.fillText(sigText, VW/2, VH-29);
+    ctx.fillText(sigText, VW/2, VH-38);
 
     ctx.restore();
     requestAnimationFrame(draw);
